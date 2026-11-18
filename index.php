@@ -13,9 +13,9 @@ $feat = fetch_all(PRODUCT_SELECT . ' WHERE p.is_active=1 AND p.is_featured=1 ORD
 if ($feat): ?><section class="wrap section"><div class="sechead"><div><span class="eyebrow">Hand-picked</span><h2 class="sec">Featured</h2></div><a class="more" href="<?= url('/shop.php') ?>">See everything &rarr;</a></div>
 <div class="rail"><?php foreach ($feat as $p) echo product_card($p); ?></div></section><?php endif;
 
-$new = fetch_all(PRODUCT_SELECT . ' WHERE p.is_active=1 ORDER BY p.id DESC LIMIT 8');
+$new = fetch_all(PRODUCT_SELECT . ' WHERE p.is_active=1 ORDER BY p.id DESC LIMIT 4');
 if ($new): ?><section class="wrap section"><div class="sechead"><div><span class="eyebrow">Just landed</span><h2 class="sec">New arrivals</h2></div><a class="more" href="<?= url('/shop.php') ?>">Shop all &rarr;</a></div>
-<div class="grid"><?php foreach ($new as $p) echo product_card($p); ?></div></section><?php endif;
+<div class="grid row1"><?php foreach ($new as $p) echo product_card($p); ?></div></section><?php endif;
 
 $brands = fetch_all('SELECT name,slug,logo FROM brands WHERE is_active=1 AND logo IS NOT NULL ORDER BY sort_order, name');
 if ($brands): ?><section class="wrap section"><div class="sechead"><div><span class="eyebrow">Trusted names</span><h2 class="sec">Brands we carry</h2></div></div><div class="brands">

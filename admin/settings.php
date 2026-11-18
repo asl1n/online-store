@@ -25,6 +25,8 @@ $sections = [
     'facebook_url' => ['Facebook page URL', 'text', 255, false, 'Must start with https://', 'url', true],
     'instagram_url' => ['Instagram URL', 'text', 255, false, 'Must start with https://', 'url', true],
     'copyright_text' => ['Copyright text', 'text', 150, false, 'Leave empty for “© year Site name. All rights reserved.”', '', false],
+    'powered_by' => ['Powered by (name)', 'text', 80, false, 'Shown on the right side of the footer bar as “Powered by …”. Leave empty to hide.', '', true],
+    'powered_by_url' => ['Powered by link', 'text', 255, false, 'Optional. Makes the name a link. Must start with https://', 'url', true],
   ],
 ];
 $cur = settings_all(); $errors = []; $vals = $cur;

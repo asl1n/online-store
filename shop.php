@@ -35,7 +35,7 @@ render_banners('shop', true); ?>
       <?php foreach ($brands as $b): ?><option value="<?= e($b['slug']) ?>" <?= $brandSlug === $b['slug'] ? 'selected' : '' ?>><?= e($b['name']) ?></option><?php endforeach; ?></select>
     <select name="sort" data-autosubmit aria-label="Sort"><?php foreach (['new' => 'Newest first', 'low' => 'Price: low to high', 'high' => 'Price: high to low', 'name' => 'Name A–Z'] as $k => $l): ?><option value="<?= $k ?>" <?= $sort === $k ? 'selected' : '' ?>><?= $l ?></option><?php endforeach; ?></select>
     <noscript><button class="btn sm">Apply</button></noscript>
-    <?php if ($filtered): ?><a class="chip" href="<?= url('/shop.php') ?>">Clear filters &times;</a><?php endif; ?>
+    <?php if ($filtered): ?><a class="clearlink" href="<?= url('/shop.php') ?>">Clear filters</a><?php endif; ?>
   </form>
   <?php if ($items): ?><div class="grid"><?php foreach ($items as $p) echo product_card($p); ?></div><?= site_pager($page, $pages) ?>
   <?php else: ?><div class="emptybox"><h3>No products found</h3><p class="muted">Try a different search or clear the filters.</p><a class="btn" href="<?= url('/shop.php') ?>">View all products</a></div><?php endif; ?>
