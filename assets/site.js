@@ -82,3 +82,11 @@ document.querySelectorAll("[data-rail]").forEach(function (w) {
   window.addEventListener("resize", check);
   check();
 });
+
+/* phone fields: letters and symbols are removed as the person types or pastes */
+document.querySelectorAll("[data-phone]").forEach(function (i) {
+  i.addEventListener("input", function () {
+    var c = i.value.replace(/[^0-9+\-\s()]/g, "");
+    if (c !== i.value) i.value = c;
+  });
+});

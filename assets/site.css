@@ -1641,3 +1641,15 @@ select {
     margin-bottom: 16px;
   }
 }
+
+/* round 8: contact form finishing */
+.cform textarea {
+  display: block;
+  resize: vertical;
+  min-height: 130px;
+  max-height: 420px;
+}
+.cform ::placeholder {
+  color: #9b97b8;
+  opacity: 1;
+}

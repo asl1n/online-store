@@ -14,10 +14,15 @@ site_header('Contact', 'contact', 'Contact ' . site_name() . ' for product enqui
 <div class="wrap section"><div class="sechead"><div><span class="eyebrow">We reply fast</span><h1>Contact us</h1></div></div><div class="detail">
 <form method="post" class="cform"><?= csrf_field() ?><?= contact_honeypot_field() ?>
 <?php if (isset($errors['form'])): ?><div class="flash err"><?= e($errors['form']) ?></div><?php endif; ?>
-<?php foreach (['name' => ['Your name', 'text', 100], 'email' => ['Email', 'email', 150], 'phone' => ['Phone (optional)', 'text', 30], 'subject' => ['Subject (optional)', 'text', 200]] as $k => [$label, $type, $max]): ?>
-<label><?= $label ?><input type="<?= $type ?>" name="<?= $k ?>" maxlength="<?= $max ?>" value="<?= $v($k) ?>" <?= in_array($k, ['name', 'email'], true) ? 'required' : '' ?>></label>
+<?php foreach ([
+  'name'    => ['Your name', 'text', 100, 'Your full name', 'name', 'minlength="2"'],
+  'email'   => ['Email', 'email', 150, 'you@example.com', 'email', 'inputmode="email"'],
+  'phone'   => ['Phone (optional)', 'tel', 30, 'e.g. 9801234567', 'tel', 'inputmode="tel" data-phone pattern="[0-9+\-\s\(\)]{6,30}" title="Numbers only, at least 6 digits. You can also use + - ( ) and spaces."'],
+  'subject' => ['Subject (optional)', 'text', 200, 'What is this about?', 'off', ''],
+] as $k => [$label, $type, $max, $ph, $ac, $extra]): ?>
+<label><?= $label ?><input type="<?= $type ?>" name="<?= $k ?>" maxlength="<?= $max ?>" placeholder="<?= e($ph) ?>" autocomplete="<?= $ac ?>" <?= $extra ?> value="<?= $v($k) ?>" <?= in_array($k, ['name', 'email'], true) ? 'required' : '' ?>></label>
 <?php if (isset($errors[$k])): ?><div class="err"><?= e($errors[$k]) ?></div><?php endif; endforeach; ?>
-<label>Message<textarea name="message" rows="6" maxlength="3000" required><?= $v('message') ?></textarea></label>
+<label>Message<textarea name="message" rows="6" minlength="5" maxlength="3000" placeholder="Tell us what you need, e.g. size, colour or price of a product." required><?= $v('message') ?></textarea></label>
 <?php if (isset($errors['message'])): ?><div class="err"><?= e($errors['message']) ?></div><?php endif; ?>
 <button class="btn">Send message</button></form>
 <div class="infobox"><h3>Get in touch</h3><p class="muted">Call, email or send us a message. We usually reply within a day.</p>
