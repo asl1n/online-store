@@ -52,7 +52,7 @@ function admin_logout(): void {
 
 // ---- Admin account management ----
 function create_admin(string $name, string $email, string $password, string $role = 'admin'): int {
-    if (strlen($password) < 8) throw new InvalidArgumentException('Password must be at least 8 characters.');
+    if ($pe = validate_password($password)) throw new InvalidArgumentException($pe);
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) throw new InvalidArgumentException('Invalid email.');
     if (fetch_val('SELECT COUNT(*) FROM admins WHERE email=?', [$email])) throw new InvalidArgumentException('Email already in use.');
     return db_insert('admins', [
@@ -72,9 +72,16 @@ function update_own_credentials(string $name, string $email, string $currentPw, 
     if (fetch_val('SELECT COUNT(*) FROM admins WHERE email=? AND id<>?', [$email, $me['id']])) throw new InvalidArgumentException('Email already in use.');
     $data = ['name' => $name, 'email' => $email];
     if ($newPw !== null && $newPw !== '') {
-        if (strlen($newPw) < 8) throw new InvalidArgumentException('New password must be at least 8 characters.');
+        if ($pe = validate_password($newPw)) throw new InvalidArgumentException($pe);
         $data['password_hash'] = password_hash($newPw, PASSWORD_DEFAULT);
     }
     db_update('admins', (int)$me['id'], $data);
     log_activity('update', 'admin', (int)$me['id'], 'Updated own credentials');
+}
+
+function validate_password(string $p): ?string {
+    if (strlen($p) < 8) return 'Password must be at least 8 characters.';
+    if (strlen($p) > 72) return 'Password must be 72 characters or fewer.';
+    if (!preg_match('/[A-Za-z]/', $p) || !preg_match('/\d/', $p)) return 'Password must include at least one letter and one number.';
+    return null;
 }

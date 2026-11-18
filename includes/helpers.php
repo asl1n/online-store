@@ -40,8 +40,8 @@ function upload_image(string $field, string $subdir): ?string {
     if ($f['error'] !== UPLOAD_ERR_OK) throw new RuntimeException('Upload failed.');
     if ($f['size'] > MAX_UPLOAD_MB * 1024 * 1024) throw new RuntimeException('Image too large (max ' . MAX_UPLOAD_MB . 'MB).');
     $mime = (new finfo(FILEINFO_MIME_TYPE))->file($f['tmp_name']);
-    $ext = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/gif' => 'gif'][$mime] ?? null;
-    if (!$ext) throw new RuntimeException('Only JPG, PNG, WEBP or GIF images allowed.');
+    $ext = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/gif' => 'gif', 'image/x-icon' => 'ico', 'image/vnd.microsoft.icon' => 'ico'][$mime] ?? null;
+    if (!$ext) throw new RuntimeException('Only JPG, PNG, WEBP, GIF or ICO images are allowed.');
     $dir = UPLOAD_DIR . $subdir . '/';
     if (!is_dir($dir)) mkdir($dir, 0755, true);
     $name = bin2hex(random_bytes(10)) . '.' . $ext;
@@ -64,6 +64,22 @@ function log_activity(string $action, string $entity, ?int $entityId = null, ?st
 /** Audit fields to merge into insert/update data. */
 function audit_create(): array { $id = current_admin()['id'] ?? null; return ['created_by' => $id, 'updated_by' => $id]; }
 function audit_update(): array { return ['updated_by' => current_admin()['id'] ?? null]; }
+
+// ---- Site settings (key/value table, loaded once per request) ----
+function settings_all(): array {
+    static $c = null;
+    if ($c === null) {
+        try { $c = array_column(fetch_all('SELECT `key`,`value` FROM settings'), 'value', 'key'); }
+        catch (Throwable $e) { $c = []; }
+    }
+    return $c;
+}
+function setting(string $key, string $default = ''): string {
+    $v = settings_all()[$key] ?? null;
+    return ($v === null || $v === '') ? $default : (string)$v;
+}
+function favicon_tag(): string { $f = setting('favicon'); return $f ? '<link rel="icon" href="' . e(upload_url($f)) . '">' : ''; }
+function site_name(): string { return setting('site_name', 'Allure International'); }
 
 // ---- Security headers ----
 function send_security_headers(): void {

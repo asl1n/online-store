@@ -24,6 +24,7 @@ try {
 <?php if ($done): ?>
   <p>Installed. Tables created and super admin set up.</p>
   <p><b>Now delete <code>install.php</code>.</b></p>
+  <p><a href="<?= BASE_URL ?>/admin/login.php">Go to admin login &rarr;</a> &nbsp; then open <b>Settings</b> to add your logos, favicon and contact details.</p>
 <?php else: ?>
   <?php if ($error) echo '<p style="color:#b00">' . e($error) . '</p>'; ?>
   <form method="post"><?= csrf_field() ?>

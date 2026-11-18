@@ -2,52 +2,52 @@
 require_once __DIR__ . '/admin_layout.php';
 require_once __DIR__ . '/contact.php'; // clean_text()
 
+function crud_options(array $f): array { $o = $f['options'] ?? []; return is_callable($o) ? $o() : $o; }
+
 function crud_values(array $c, ?array $row): array {
     $v = [];
-    foreach ($c['fields'] as $f) {
-        $n = $f['name'];
-        $v[$n] = $row[$n] ?? ($f['default'] ?? ($f['type'] === 'checkbox' ? 0 : ''));
-    }
+    foreach ($c['fields'] as $f) $v[$f['name']] = $row[$f['name']] ?? ($f['default'] ?? ($f['type'] === 'checkbox' ? 0 : ''));
     return $v;
 }
 
-function crud_options(array $f): array {
-    $o = $f['options'] ?? [];
-    return is_callable($o) ? $o() : $o;
-}
-
-/** Validate + collect POST into $data. Returns [data, errors]. */
-function crud_collect(array $c, ?array $existing): array {
-    $data = []; $err = [];
+/** Validate + collect POST. Returns [data, errors]. */
+function crud_collect(array $c, ?array $existing, int $id): array {
+    $data = []; $err = []; $table = $c['table'];
     foreach ($c['fields'] as $f) {
         $n = $f['name']; $label = $f['label']; $req = !empty($f['required']);
         switch ($f['type']) {
             case 'checkbox': $data[$n] = isset($_POST[$n]) ? 1 : 0; break;
             case 'image':
                 try {
-                    $p = upload_image($n, $c['table']);
+                    $p = upload_image($n, $table);
                     if ($p) $data[$n] = $p;
-                    elseif ($req && empty($existing[$n])) $err[$n] = "$label is required.";
+                    elseif (!empty($_POST['remove_' . $n]) && !$req) $data[$n] = null;
+                    elseif ($req && empty($existing[$n])) $err[$n] = "$label is required. Please choose an image.";
                 } catch (Throwable $ex) { $err[$n] = $ex->getMessage(); }
                 break;
             case 'number':
                 $s = trim((string)($_POST[$n] ?? ''));
-                if ($s === '' && !$req) { $data[$n] = $f['default'] ?? 0; break; }
-                if (!is_numeric($s) || $s < 0 || $s > 999999999) $err[$n] = "$label must be a valid number.";
-                else $data[$n] = $s;
-                break;
+                if ($s === '') { if ($req) $err[$n] = "$label is required."; else $data[$n] = $f['default'] ?? 0; break; }
+                if (!empty($f['int'])) { if (!preg_match('/^\d+$/', $s)) { $err[$n] = "$label must be a whole number (0 or more)."; break; } }
+                elseif (!preg_match('/^\d+(\.\d{1,2})?$/', $s)) { $err[$n] = "$label must be a valid amount (numbers only, up to 2 decimals)."; break; }
+                if ($s > ($f['maxv'] ?? 999999999)) { $err[$n] = "$label is too large."; break; }
+                if ($s < ($f['min'] ?? 0)) { $err[$n] = "$label must be at least " . ($f['min'] ?? 0) . '.'; break; }
+                $data[$n] = $s; break;
             case 'select':
                 $s = (string)($_POST[$n] ?? ''); $opts = crud_options($f);
-                if ($s === '') { if ($req) $err[$n] = "$label is required."; else $data[$n] = null; }
-                elseif (!array_key_exists($s, $opts)) $err[$n] = "Invalid $label.";
+                if ($s === '') { if ($req) $err[$n] = "Please choose a $label."; else $data[$n] = null; }
+                elseif (!array_key_exists($s, $opts)) $err[$n] = "That $label is not valid. Please choose from the list.";
                 else $data[$n] = $s;
                 break;
             default: // text, textarea
                 $s = clean_text((string)($_POST[$n] ?? ''), $f['type'] === 'textarea');
                 $max = $f['max'] ?? ($f['type'] === 'textarea' ? 20000 : 255);
                 if ($req && $s === '') $err[$n] = "$label is required.";
-                elseif (mb_strlen($s) > $max) $err[$n] = "$label is too long (max $max).";
-                elseif ($s !== '' && !empty($f['pattern']) && !preg_match($f['pattern'], $s)) $err[$n] = $f['pattern_msg'] ?? "Invalid $label.";
+                elseif (mb_strlen($s) > $max) $err[$n] = "$label is too long (max $max characters, you typed " . mb_strlen($s) . ').';
+                elseif (!empty($f['min_len']) && $s !== '' && mb_strlen($s) < $f['min_len']) $err[$n] = "$label must be at least {$f['min_len']} characters.";
+                elseif ($s !== '' && !empty($f['pattern']) && !preg_match($f['pattern'], $s)) $err[$n] = $f['pattern_msg'] ?? "$label is not in a valid format.";
+                elseif ($s !== '' && !empty($f['unique']) && fetch_val("SELECT COUNT(*) FROM `$table` WHERE LOWER(`$n`)=LOWER(?) AND id<>?", [$s, $id]))
+                    $err[$n] = "A {$c['entity']} named “$s” already exists. Please use a different $label.";
                 else $data[$n] = $s === '' ? null : $s;
         }
     }
@@ -55,7 +55,7 @@ function crud_collect(array $c, ?array $existing): array {
 }
 
 function crud_run(array $c): void {
-    $a = require_admin();
+    require_admin();
     $table = $c['table']; $act = $_GET['action'] ?? 'list'; $id = (int)($_GET['id'] ?? 0);
     $self = strtok($_SERVER['REQUEST_URI'], '?');
     $errors = []; $posted = null;
@@ -63,67 +63,73 @@ function crud_run(array $c): void {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         csrf_check();
         if (($_POST['_do'] ?? '') === 'delete') {
-            $row = fetch_one("SELECT * FROM `$table` WHERE id=?", [(int)$_POST['id']]);
+            $row = fetch_one("SELECT * FROM `$table` WHERE id=?", [(int)($_POST['id'] ?? 0)]);
             if ($row) {
                 foreach ($c['fields'] as $f) if ($f['type'] === 'image') delete_upload($row[$f['name']]);
                 db_delete($table, (int)$row['id']);
-                log_activity('delete', $c['entity'], (int)$row['id'], $row[$c['title_field']] ?? '');
+                log_activity('delete', $c['entity'], (int)$row['id'], (string)($row[$c['title_field']] ?? ''));
                 flash('ok', $c['entity'] . ' deleted.');
-            }
+            } else flash('err', 'That ' . strtolower($c['entity']) . ' no longer exists.');
             go($self);
         }
-        // save
         $existing = $id ? fetch_one("SELECT * FROM `$table` WHERE id=?", [$id]) : null;
-        if ($id && !$existing) go($self);
-        [$data, $errors] = crud_collect($c, $existing);
+        if ($id && !$existing) { flash('err', 'That ' . strtolower($c['entity']) . ' no longer exists.'); go($self); }
+        [$data, $errors] = crud_collect($c, $existing, $id);
         if (!$errors) {
-            if (!empty($c['slug_from'])) $data['slug'] = unique_slug($table, (string)$data[$c['slug_from']], $id);
-            if (!empty($c['before_save'])) $data = $c['before_save']($data, $existing);
-            if ($existing) {
-                db_update($table, $id, $data + audit_update());
-                foreach ($c['fields'] as $f) // replaced image -> remove old file
-                    if ($f['type'] === 'image' && !empty($data[$f['name']]) && $existing[$f['name']]) delete_upload($existing[$f['name']]);
-                log_activity('update', $c['entity'], $id, (string)($data[$c['title_field']] ?? ''));
-                flash('ok', $c['entity'] . ' updated.');
-            } else {
-                $nid = db_insert($table, $data + audit_create());
-                log_activity('create', $c['entity'], $nid, (string)($data[$c['title_field']] ?? ''));
-                flash('ok', $c['entity'] . ' created.');
+            try {
+                if (!empty($c['slug_from'])) $data['slug'] = unique_slug($table, (string)$data[$c['slug_from']], $id);
+                if (!empty($c['before_save'])) $data = $c['before_save']($data, $existing);
+                $title = (string)($data[$c['title_field']] ?? '');
+                if ($existing) {
+                    db_update($table, $id, $data + audit_update());
+                    foreach ($c['fields'] as $f) {
+                        $n = $f['name'];
+                        if ($f['type'] === 'image' && array_key_exists($n, $data) && $existing[$n] && $data[$n] !== $existing[$n]) delete_upload($existing[$n]);
+                    }
+                    log_activity('update', $c['entity'], $id, $title); flash('ok', $c['entity'] . ' updated successfully.');
+                } else {
+                    $nid = db_insert($table, $data + audit_create());
+                    log_activity('create', $c['entity'], $nid, $title); flash('ok', $c['entity'] . ' created successfully.');
+                }
+                go($self);
+            } catch (PDOException $ex) {
+                $errors['_form'] = APP_DEBUG ? 'Database error: ' . $ex->getMessage() : 'Sorry, something went wrong while saving. Please try again.';
             }
-            go($self);
         }
         $posted = $_POST; $act = $id ? 'edit' : 'new';
     }
 
-    admin_header($c['title'], $c['active']);
+    $addBtn = '<a class="btn" href="' . e($self) . '?action=new">+ Add ' . e($c['entity']) . '</a>';
 
     // ---------- FORM ----------
     if ($act === 'new' || $act === 'edit') {
         $row = $act === 'edit' ? fetch_one("SELECT * FROM `$table` WHERE id=?", [$id]) : null;
-        if ($act === 'edit' && !$row) { echo '<p>Not found.</p>'; admin_footer(); return; }
+        if ($act === 'edit' && !$row) { flash('err', 'That ' . strtolower($c['entity']) . ' was not found.'); go($self); }
         $vals = $posted ? array_merge(crud_values($c, $row), $posted) : crud_values($c, $row);
-        ?>
-        <form method="post" enctype="multipart/form-data" class="card form"><?= csrf_field() ?>
-        <?php foreach ($c['fields'] as $f): $n = $f['name']; ?>
-          <div class="row"><label for="<?= e($n) ?>"><?= e($f['label']) ?><?= !empty($f['required']) ? ' *' : '' ?></label>
-          <?php if ($f['type'] === 'textarea'): ?>
-            <textarea id="<?= e($n) ?>" name="<?= e($n) ?>" rows="<?= (int)($f['rows'] ?? 5) ?>"><?= e($vals[$n]) ?></textarea>
-          <?php elseif ($f['type'] === 'select'): ?>
-            <select id="<?= e($n) ?>" name="<?= e($n) ?>"><option value="">— none —</option>
-            <?php foreach (crud_options($f) as $k => $lab): ?><option value="<?= e($k) ?>" <?= (string)$vals[$n] === (string)$k ? 'selected' : '' ?>><?= e($lab) ?></option><?php endforeach; ?></select>
-          <?php elseif ($f['type'] === 'checkbox'): ?>
-            <label class="chk"><input type="checkbox" id="<?= e($n) ?>" name="<?= e($n) ?>" <?= $vals[$n] ? 'checked' : '' ?>> Yes</label>
-          <?php elseif ($f['type'] === 'image'): ?>
-            <?php if (!empty($row[$n])): ?><img class="thumb" src="<?= e(upload_url($row[$n])) ?>" alt=""><?php endif; ?>
-            <input type="file" id="<?= e($n) ?>" name="<?= e($n) ?>" accept="image/jpeg,image/png,image/webp,image/gif">
-          <?php else: ?>
-            <input id="<?= e($n) ?>" name="<?= e($n) ?>" type="<?= $f['type'] === 'number' ? 'number' : 'text' ?>" <?= $f['type'] === 'number' ? 'step="0.01" min="0"' : '' ?> value="<?= e($vals[$n]) ?>">
-          <?php endif; ?>
-          <?php if (!empty($f['help'])): ?><small><?= e($f['help']) ?></small><?php endif; ?>
-          <?php if (isset($errors[$n])): ?><div class="err"><?= e($errors[$n]) ?></div><?php endif; ?>
-          </div>
-        <?php endforeach; ?>
-        <button class="btn">Save</button> <a class="btn ghost" href="<?= e($self) ?>">Cancel</a></form>
+        admin_header(($act === 'edit' ? 'Edit ' : 'Add ') . $c['entity'], $c['active'], '<a class="btn ghost" href="' . e($self) . '">&larr; Back to list</a>');
+        echo ui_errors_summary($errors); ?>
+        <form method="post" enctype="multipart/form-data" class="card formcard"><?= csrf_field() ?><div class="form-grid">
+        <?php foreach ($c['fields'] as $f):
+            $n = $f['name']; $o = ['error' => $errors[$n] ?? null, 'help' => $f['help'] ?? null, 'half' => !empty($f['half']), 'req' => !empty($f['required']), 'for' => $n];
+            $req = !empty($f['required']) ? ['required' => true] : [];
+            switch ($f['type']) {
+                case 'textarea': $ctl = ui_textarea($n, $vals[$n], ['rows' => $f['rows'] ?? 5, 'maxlength' => $f['max'] ?? 20000] + $req); break;
+                case 'select':
+                    $ctl = '<select id="' . e($n) . '" name="' . e($n) . '"><option value="">— Select —</option>';
+                    foreach (crud_options($f) as $k => $lab) $ctl .= '<option value="' . e($k) . '"' . ((string)$vals[$n] === (string)$k ? ' selected' : '') . '>' . e($lab) . '</option>';
+                    $ctl .= '</select>'; break;
+                case 'checkbox': $ctl = '<label class="chk"><input type="checkbox" id="' . e($n) . '" name="' . e($n) . '"' . ($vals[$n] ? ' checked' : '') . '> Yes</label>'; break;
+                case 'image':
+                    $ctl = (!empty($row[$n]) ? '<img class="thumb" src="' . e(upload_url($row[$n])) . '" alt="">' : '')
+                         . '<input type="file" id="' . e($n) . '" name="' . e($n) . '" accept="image/jpeg,image/png,image/webp,image/gif">'
+                         . (!empty($row[$n]) && empty($f['required']) ? '<label class="chk"><input type="checkbox" name="remove_' . e($n) . '"> Remove current image</label>' : '');
+                    break;
+                case 'number': $ctl = ui_input($n, $vals[$n], ['type' => 'number', 'step' => !empty($f['int']) ? '1' : '0.01', 'min' => $f['min'] ?? 0, 'inputmode' => 'decimal'] + $req); break;
+                default: $ctl = ui_input($n, $vals[$n], ['type' => 'text', 'maxlength' => $f['max'] ?? 255] + $req);
+            }
+            echo ui_field($f['label'], $ctl, $o);
+        endforeach; ?></div>
+        <div class="form-actions"><button class="btn"><?= $act === 'edit' ? 'Save changes' : 'Create ' . e(strtolower($c['entity'])) ?></button><a class="btn ghost" href="<?= e($self) ?>">Cancel</a></div></form>
         <?php admin_footer(); return;
     }
 
@@ -137,25 +143,24 @@ function crud_run(array $c): void {
     }
     $total = (int) fetch_val("SELECT COUNT(*) $from $where", $params);
     $pages = max(1, (int)ceil($total / $per)); $page = min($page, $pages);
-    $order = $c['order'] ?? 't.id DESC'; // from code only
-    $rows = fetch_all("SELECT t.*, ca.name AS created_name, ua.name AS updated_name " . ($c['extra_select'] ?? '') .
-        " $from $where ORDER BY $order LIMIT " . (int)$per . ' OFFSET ' . (int)(($page - 1) * $per), $params);
-    ?>
-    <div class="bar"><a class="btn" href="<?= e($self) ?>?action=new">+ Add <?= e($c['entity']) ?></a>
-      <?php if (!empty($c['search'])): ?><form method="get"><input name="s" placeholder="Search…" value="<?= e($s) ?>"><button class="btn ghost">Search</button></form><?php endif; ?></div>
-    <div class="card"><table><thead><tr>
-      <?php foreach ($c['columns'] as $col): ?><th><?= e($col['label']) ?></th><?php endforeach; ?><th>Added by</th><th>Last edit</th><th></th></tr></thead><tbody>
+    $rows = fetch_all('SELECT t.*, ca.name AS created_name, ua.name AS updated_name ' . ($c['extra_select'] ?? '') . " $from $where ORDER BY " . ($c['order'] ?? 't.id DESC')
+        . ' LIMIT ' . (int)$per . ' OFFSET ' . (int)(($page - 1) * $per), $params);
+    admin_header($c['title'], $c['active'], $addBtn); ?>
+    <div class="toolbar"><span class="count"><?= (int)$total ?> <?= $total === 1 ? 'item' : 'items' ?><?= $s !== '' ? ' matching “' . e($s) . '”' : '' ?></span>
+      <?php if (!empty($c['search'])): ?><form method="get"><input type="text" name="s" placeholder="Search…" value="<?= e($s) ?>"><button class="btn ghost">Search</button><?php if ($s !== ''): ?><a class="btn ghost" href="<?= e($self) ?>">Clear</a><?php endif; ?></form><?php endif; ?></div>
+    <div class="card tablewrap"><table class="table"><thead><tr>
+      <?php foreach ($c['columns'] as $col): ?><th><?= e($col['label']) ?></th><?php endforeach; ?><th>Added / edited</th><th></th></tr></thead><tbody>
     <?php foreach ($rows as $r): ?><tr>
-      <?php foreach ($c['columns'] as $col): $v = $r[$col['name']] ?? ''; ?><td>
-        <?php if (($col['type'] ?? '') === 'image'): ?><?= $v ? '<img class="thumb sm" src="' . e(upload_url($v)) . '" alt="">' : '' ?>
-        <?php elseif (($col['type'] ?? '') === 'bool'): ?><span class="pill <?= $v ? 'on' : '' ?>"><?= $v ? 'Yes' : 'No' ?></span>
-        <?php elseif (($col['type'] ?? '') === 'money'): ?>Rs. <?= e(number_format((float)$v)) ?>
-        <?php else: ?><?= e($v) ?><?php endif; ?></td><?php endforeach; ?>
-      <td><?= e($r['created_name'] ?? '—') ?><br><small><?= e(substr((string)$r['created_at'], 0, 16)) ?></small></td>
-      <td><?= e($r['updated_name'] ?? '—') ?><br><small><?= e(substr((string)$r['updated_at'], 0, 16)) ?></small></td>
-      <td class="act"><a href="<?= e($self) ?>?action=edit&id=<?= (int)$r['id'] ?>">Edit</a>
-        <form method="post" data-confirm="Delete this <?= e($c['entity']) ?>?"><?= csrf_field() ?><input type="hidden" name="_do" value="delete"><input type="hidden" name="id" value="<?= (int)$r['id'] ?>"><button class="link danger">Delete</button></form></td>
-    </tr><?php endforeach; if (!$rows): ?><tr><td colspan="<?= count($c['columns']) + 3 ?>">Nothing here yet.</td></tr><?php endif; ?>
+      <?php foreach ($c['columns'] as $col): $v = $r[$col['name']] ?? ''; $t = $col['type'] ?? ''; ?><td>
+        <?php if ($t === 'image'): ?><?= $v ? '<img class="thumb sm" src="' . e(upload_url($v)) . '" alt="">' : '<span class="count">—</span>' ?>
+        <?php elseif ($t === 'bool'): ?><span class="pill <?= $v ? 'on' : 'off' ?>"><?= $v ? 'Yes' : 'No' ?></span>
+        <?php elseif ($t === 'money'): ?>Rs. <?= e(number_format((float)$v)) ?>
+        <?php else: ?><?= $v === '' || $v === null ? '<span class="count">—</span>' : e($v) ?><?php endif; ?></td><?php endforeach; ?>
+      <td class="audit"><small>Added by <b><?= e($r['created_name'] ?? 'unknown') ?></b> · <?= e(substr((string)$r['created_at'], 0, 10)) ?></small>
+        <small>Edited by <b><?= e($r['updated_name'] ?? 'unknown') ?></b> · <?= e(substr((string)$r['updated_at'], 0, 10)) ?></small></td>
+      <td class="act"><a class="btn sm ghost" href="<?= e($self) ?>?action=edit&amp;id=<?= (int)$r['id'] ?>">Edit</a>
+        <form method="post" data-confirm-title="Delete <?= e(strtolower($c['entity'])) ?>?" data-confirm="Delete “<?= e((string)($r[$c['title_field']] ?? '')) ?>”? <?= e($c['delete_note'] ?? 'This cannot be undone.') ?>"><?= csrf_field() ?><input type="hidden" name="_do" value="delete"><input type="hidden" name="id" value="<?= (int)$r['id'] ?>"><button class="btn sm danger-ghost">Delete</button></form></td>
+    </tr><?php endforeach; if (!$rows): ?><tr><td colspan="<?= count($c['columns']) + 2 ?>" class="empty"><?= $s !== '' ? 'No results for your search.' : 'Nothing here yet. Click “Add ' . e($c['entity']) . '” to create the first one.' ?></td></tr><?php endif; ?>
     </tbody></table></div><?= pager($page, $pages) ?>
     <?php admin_footer();
 }

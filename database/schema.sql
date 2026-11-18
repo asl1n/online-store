@@ -125,3 +125,19 @@ CREATE TABLE IF NOT EXISTS activity_logs (
   INDEX (admin_id), INDEX (entity, entity_id), INDEX (created_at),
   FOREIGN KEY (admin_id) REFERENCES admins(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS settings (
+  `key` VARCHAR(60) NOT NULL PRIMARY KEY,
+  `value` TEXT NULL,
+  updated_by INT UNSIGNED NULL,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (updated_by) REFERENCES admins(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT IGNORE INTO settings (`key`,`value`) VALUES
+('site_name','Allure International'),
+('meta_description','Premium TVs, speakers, headphones, gaming and audio gear in Nepal.'),
+('phones','9802055500, 9802055501'),
+('email','allureinternationalnp@gmail.com'),
+('address','Jawalakhel, Lalitpur'),
+('footer_about','Your trusted store for premium TVs, speakers, headphones and gaming gear.');

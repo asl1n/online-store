@@ -20,5 +20,5 @@ site_header('Contact', 'contact'); render_banners('contact', true); ?>
 <label>Message<textarea name="message" rows="6" maxlength="3000" required><?= $v('message') ?></textarea></label>
 <?php if (isset($errors['message'])): ?><div class="err"><?= e($errors['message']) ?></div><?php endif; ?>
 <button class="btn">Send message</button></form>
-<div class="infobox"><h3>Get in touch</h3><p><b>Phone</b><br><?= e(SITE_PHONES) ?></p><p><b>Address</b><br><?= e(SITE_ADDRESS) ?></p><p><b>Email</b><br><?= e(SITE_EMAIL) ?></p></div></div></div>
+<div class="infobox"><h3>Get in touch</h3><p><b>Phone</b><br><?= e(setting('phones')) ?></p><p><b>Address</b><br><?= e(setting('address')) ?></p><p><b>Email</b><br><?= e(setting('email')) ?></p></div></div></div>
 <?php site_footer();

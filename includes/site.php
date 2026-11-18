@@ -2,10 +2,6 @@
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/contact.php';
 
-const SITE_NAME = 'Allure International';
-const SITE_PHONES = '9802055500, 9802055501';
-const SITE_ADDRESS = 'Jawalakhel, Lalitpur';
-const SITE_EMAIL = 'allureinternationalnp@gmail.com';
 const PRODUCT_SELECT = 'SELECT p.*, b.name AS brand_name, b.slug AS brand_slug, c.name AS category_name, c.slug AS category_slug
   FROM products p LEFT JOIN brands b ON b.id=p.brand_id LEFT JOIN categories c ON c.id=p.category_id';
 
@@ -69,14 +65,21 @@ function site_pager(int $page, int $pages): string {
     return $o . '</div>';
 }
 
+function logo_html(string $key): string {
+    $img = setting($key); $name = site_name();
+    if ($img) return '<span class="logo-img"><img src="' . e(upload_url($img)) . '" alt="' . e($name) . '"></span>';
+    return '<span class="logo-text">' . e(mb_strtoupper($name)) . '</span>';
+}
+
 function site_header(string $title, string $active = '', string $desc = ''): void {
     $cats = fetch_all('SELECT name,slug FROM categories WHERE is_active=1 ORDER BY sort_order, name');
     $nav = ['home' => ['Home', '/index.php'], 'shop' => ['Shop', '/shop.php'], 'blog' => ['Blog', '/blogs.php'], 'contact' => ['Contact', '/contact.php']];
+    $name = site_name(); $full = $title === 'Home' ? $name : $title . ' | ' . $name;
     ?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title><?= e($title) ?> | <?= SITE_NAME ?></title><meta name="description" content="<?= e($desc ?: 'Premium TVs, speakers, headphones, gaming and audio gear in Nepal.') ?>">
+<title><?= e($full) ?></title><meta name="description" content="<?= e($desc ?: setting('meta_description')) ?>"><?= favicon_tag() ?>
 <link rel="stylesheet" href="<?= url('/assets/site.css') ?>"></head><body>
 <header class="top"><div class="wrap bar">
-  <a class="logo" href="<?= url('/index.php') ?>">ALLURE<small>INTERNATIONAL</small></a>
+  <a class="logo" href="<?= url('/index.php') ?>"><?= logo_html('header_logo') ?></a>
   <div class="dd"><button class="btn sm" type="button">All Categories &#9662;</button><div class="menu">
     <?php foreach ($cats as $c): ?><a href="<?= e(url('/shop.php?category=' . urlencode($c['slug']))) ?>"><?= e($c['name']) ?></a><?php endforeach; ?></div></div>
   <button class="burger" data-nav-toggle aria-label="Menu">&#9776;</button>
@@ -87,13 +90,21 @@ function site_header(string $title, string $active = '', string $desc = ''): voi
 }
 
 function site_footer(): void {
-    $cats = fetch_all('SELECT name,slug FROM categories WHERE is_active=1 ORDER BY sort_order, name'); ?>
+    $cats = fetch_all('SELECT name,slug FROM categories WHERE is_active=1 ORDER BY sort_order, name');
+    $fb = setting('facebook_url'); $ig = setting('instagram_url');
+    $copy = setting('copyright_text') ?: '© ' . date('Y') . ' ' . site_name() . '. All rights reserved.'; ?>
 <footer><div class="wrap cols">
-  <div><div class="logo light">ALLURE<small>INTERNATIONAL</small></div>
-    <p>Phone: <?= e(SITE_PHONES) ?></p><p>Address: <?= e(SITE_ADDRESS) ?></p><p>Email: <?= e(SITE_EMAIL) ?></p></div>
+  <div><a class="logo light" href="<?= url('/index.php') ?>"><?= logo_html('footer_logo') ?></a>
+    <?php if (setting('footer_about')): ?><p><?= e(setting('footer_about')) ?></p><?php endif; ?>
+    <?php if (preg_match('~^https?://~i', $fb) || preg_match('~^https?://~i', $ig)): ?><div class="social">
+      <?php if (preg_match('~^https?://~i', $fb)): ?><a href="<?= e($fb) ?>" target="_blank" rel="noopener noreferrer">Facebook</a><?php endif; ?>
+      <?php if (preg_match('~^https?://~i', $ig)): ?><a href="<?= e($ig) ?>" target="_blank" rel="noopener noreferrer">Instagram</a><?php endif; ?></div><?php endif; ?></div>
   <div><h4>Pages</h4><a href="<?= url('/index.php') ?>">Home</a><a href="<?= url('/shop.php') ?>">Shop</a><a href="<?= url('/blogs.php') ?>">Blog</a><a href="<?= url('/contact.php') ?>">Contact</a></div>
   <div><h4>Categories</h4><?php foreach ($cats as $c): ?><a href="<?= e(url('/shop.php?category=' . urlencode($c['slug']))) ?>"><?= e($c['name']) ?></a><?php endforeach; ?></div>
-  <div><h4>Staff</h4><a href="<?= url('/admin/login.php') ?>">Admin login</a></div>
-</div><div class="copy">&copy; <?= date('Y') ?> <?= SITE_NAME ?>. All rights reserved.</div></footer>
+  <div><h4>Contact</h4>
+    <?php if (setting('phones')): ?><p>Phone: <?= e(setting('phones')) ?></p><?php endif; ?>
+    <?php if (setting('address')): ?><p>Address: <?= e(setting('address')) ?></p><?php endif; ?>
+    <?php if (setting('email')): ?><p>Email: <?= e(setting('email')) ?></p><?php endif; ?></div>
+</div><div class="copy"><?= e($copy) ?></div></footer>
 <script src="<?= url('/assets/site.js') ?>"></script></body></html>
 <?php }

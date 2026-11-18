@@ -10,7 +10,7 @@ site_header($p['name'], 'shop', (string)$p['short_description']); ?>
 <p class="price xl"><?= e(money($p['price'])) ?></p>
 <?php if ($p['short_description']): ?><p><?= e($p['short_description']) ?></p><?php endif; ?>
 <p><a class="btn" href="<?= e(url('/contact.php?product=' . urlencode($p['slug']))) ?>">Enquire about this product</a></p>
-<p class="muted">Call us: <?= e(SITE_PHONES) ?></p></div></div>
+<p class="muted">Call us: <?= e(setting('phones')) ?></p></div></div>
 <?php if ($p['description']): ?><h2 class="sec">Description</h2><div class="prose"><?= render_text($p['description']) ?></div><?php endif;
 $rel = $p['category_slug'] ? fetch_all(PRODUCT_SELECT . ' WHERE p.is_active=1 AND p.category_id=? AND p.id<>? ORDER BY p.id DESC LIMIT 4', [$p['category_id'], $p['id']]) : [];
 if ($rel): ?><h2 class="sec">Related products</h2><div class="grid g4"><?php foreach ($rel as $r) echo product_card($r); ?></div><?php endif; ?></div>
