@@ -3,7 +3,7 @@ require __DIR__ . '/includes/site.php';
 $o = site_origin() . BASE_URL;
 site_header('Home', 'home', '', ['canonical' => '/', 'jsonld' => array_filter(['@type' => 'Organization', 'name' => site_name(), 'url' => $o . '/', 'logo' => setting('header_logo') ? site_origin() . upload_url(setting('header_logo')) : null])]);
 if (banners_for('home')) render_banners('home');
-else echo '<section class="hero plain"><div class="caption"><span class="eyebrow">Welcome to ' . e(site_name()) . '</span><h2>Sound, screens &amp; play — picked with care.</h2><p>TVs, speakers, headphones and gaming gear you will actually love.</p><a class="btn" href="' . url('/shop.php') . '">Start shopping</a></div></section>';
+else echo '<section class="hero plain"><div class="caption"><span class="eyebrow">Welcome to ' . e(site_name()) . '</span><h2>Luxury and Comfort all at once.</h2><p>Clothes and shoes you will actually love.</p><a class="btn" href="' . url('/shop.php') . '">Start shopping</a></div></section>';
 
 $cats = fetch_all('SELECT c.name,c.slug,COUNT(p.id) AS cnt FROM categories c LEFT JOIN products p ON p.category_id=c.id AND p.is_active=1 WHERE c.is_active=1 GROUP BY c.id ORDER BY c.sort_order, c.name');
 if ($cats): ?><section class="wrap section"><div class="sechead"><div><span class="eyebrow">Browse</span><h2 class="sec">Shop by category</h2></div></div><div class="tiles">
