@@ -135,9 +135,9 @@ CREATE TABLE IF NOT EXISTS settings (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 INSERT IGNORE INTO settings (`key`,`value`) VALUES
-('site_name','Allure International'),
-('meta_description','Premium TVs, speakers, headphones, gaming and audio gear in Nepal.'),
-('phones','9802055500, 9802055501'),
-('email','allureinternationalnp@gmail.com'),
-('address','Jawalakhel, Lalitpur'),
-('footer_about','Your trusted store for premium TVs, speakers, headphones and gaming gear.');
+('site_name','Aslin Store'),
+('meta_description','Your go-to store for TVs, speakers, headphones, gaming and audio gear.'),
+('footer_about','Premium TVs, speakers, headphones and gaming gear, chosen with care.'),
+('header_logo','settings/aslin-logo.png'),
+('footer_logo','settings/aslin-logo-light.png'),
+('favicon','settings/aslin-favicon.png');

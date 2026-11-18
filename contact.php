@@ -11,7 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 $v = fn(string $k) => e($old[$k] ?? '');
 site_header('Contact', 'contact'); render_banners('contact', true); ?>
-<div class="wrap section"><h1>Contact us</h1><div class="detail">
+<div class="wrap section"><div class="sechead"><div><span class="eyebrow">We reply fast</span><h1>Contact us</h1></div></div><div class="detail">
 <form method="post" class="cform"><?= csrf_field() ?><?= contact_honeypot_field() ?>
 <?php if (isset($errors['form'])): ?><div class="flash err"><?= e($errors['form']) ?></div><?php endif; ?>
 <?php foreach (['name' => ['Your name', 'text', 100], 'email' => ['Email', 'email', 150], 'phone' => ['Phone (optional)', 'text', 30], 'subject' => ['Subject (optional)', 'text', 200]] as $k => [$label, $type, $max]): ?>
@@ -20,5 +20,9 @@ site_header('Contact', 'contact'); render_banners('contact', true); ?>
 <label>Message<textarea name="message" rows="6" maxlength="3000" required><?= $v('message') ?></textarea></label>
 <?php if (isset($errors['message'])): ?><div class="err"><?= e($errors['message']) ?></div><?php endif; ?>
 <button class="btn">Send message</button></form>
-<div class="infobox"><h3>Get in touch</h3><p><b>Phone</b><br><?= e(setting('phones')) ?></p><p><b>Address</b><br><?= e(setting('address')) ?></p><p><b>Email</b><br><?= e(setting('email')) ?></p></div></div></div>
+<div class="infobox"><h3>Get in touch</h3>
+<?php if (setting('phones')): ?><p><b>Phone</b><br><?= e(setting('phones')) ?></p><?php endif; ?>
+<?php if (setting('address')): ?><p><b>Visit us</b><br><?= e(setting('address')) ?></p><?php endif; ?>
+<?php if (setting('email')): ?><p><b>Email</b><br><?= e(setting('email')) ?></p><?php endif; ?>
+<?php if (!setting('phones') && !setting('address') && !setting('email')): ?><p class="muted">Send us a message and we will reply soon.</p><?php endif; ?></div></div></div>
 <?php site_footer();

@@ -2,6 +2,10 @@
 require_once __DIR__ . '/admin_layout.php';
 require_once __DIR__ . '/contact.php'; // clean_text()
 
+function crud_switch_labels(array $f): array {
+    $map = ['is_active' => ['Active', 'Inactive'], 'is_published' => ['Published', 'Draft'], 'is_featured' => ['Featured', 'Not featured']];
+    return [$f['on'] ?? ($map[$f['name']][0] ?? 'Yes'), $f['off'] ?? ($map[$f['name']][1] ?? 'No')];
+}
 function crud_options(array $f): array { $o = $f['options'] ?? []; return is_callable($o) ? $o() : $o; }
 
 function crud_values(array $c, ?array $row): array {
@@ -62,6 +66,18 @@ function crud_run(array $c): void {
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         csrf_check();
+        if (($_POST['_do'] ?? '') === 'toggle') { // quick on/off switch from the list
+            $fname = (string)($_POST['field'] ?? ''); $ret = preg_replace('/[^A-Za-z0-9=&%_.+\-]/', '', (string)($_POST['ret'] ?? ''));
+            $fdef = null; foreach ($c['fields'] as $f) if ($f['name'] === $fname && $f['type'] === 'checkbox') $fdef = $f;
+            $row = $fdef ? fetch_one("SELECT * FROM `$table` WHERE id=?", [(int)($_POST['id'] ?? 0)]) : null;
+            if ($row) {
+                $nv = $row[$fname] ? 0 : 1; $tt = (string)($row[$c['title_field']] ?? '');
+                db_update($table, (int)$row['id'], [$fname => $nv] + audit_update());
+                log_activity('update', $c['entity'], (int)$row['id'], $tt . ': ' . $fdef['label'] . ' set to ' . ($nv ? 'on' : 'off'));
+                flash('ok', '“' . $tt . '”: ' . $fdef['label'] . ' turned ' . ($nv ? 'on' : 'off') . '.');
+            }
+            go($self . ($ret !== '' ? '?' . $ret : ''));
+        }
         if (($_POST['_do'] ?? '') === 'delete') {
             $row = fetch_one("SELECT * FROM `$table` WHERE id=?", [(int)($_POST['id'] ?? 0)]);
             if ($row) {
@@ -99,13 +115,14 @@ function crud_run(array $c): void {
         $posted = $_POST; $act = $id ? 'edit' : 'new';
     }
 
-    $addBtn = '<a class="btn" href="' . e($self) . '?action=new">+ Add ' . e($c['entity']) . '</a>';
+    $addBtn = '<a class="btn add" href="' . e($self) . '?action=new">+ Add ' . e($c['entity']) . '</a>';
 
     // ---------- FORM ----------
     if ($act === 'new' || $act === 'edit') {
         $row = $act === 'edit' ? fetch_one("SELECT * FROM `$table` WHERE id=?", [$id]) : null;
         if ($act === 'edit' && !$row) { flash('err', 'That ' . strtolower($c['entity']) . ' was not found.'); go($self); }
         $vals = $posted ? array_merge(crud_values($c, $row), $posted) : crud_values($c, $row);
+        if ($posted) foreach ($c['fields'] as $f) if ($f['type'] === 'checkbox') $vals[$f['name']] = isset($posted[$f['name']]) ? 1 : 0;
         admin_header(($act === 'edit' ? 'Edit ' : 'Add ') . $c['entity'], $c['active'], '<a class="btn ghost" href="' . e($self) . '">&larr; Back to list</a>');
         echo ui_errors_summary($errors); ?>
         <form method="post" enctype="multipart/form-data" class="card formcard"><?= csrf_field() ?><div class="form-grid">
@@ -118,7 +135,8 @@ function crud_run(array $c): void {
                     $ctl = '<select id="' . e($n) . '" name="' . e($n) . '"><option value="">— Select —</option>';
                     foreach (crud_options($f) as $k => $lab) $ctl .= '<option value="' . e($k) . '"' . ((string)$vals[$n] === (string)$k ? ' selected' : '') . '>' . e($lab) . '</option>';
                     $ctl .= '</select>'; break;
-                case 'checkbox': $ctl = '<label class="chk"><input type="checkbox" id="' . e($n) . '" name="' . e($n) . '"' . ($vals[$n] ? ' checked' : '') . '> Yes</label>'; break;
+                case 'checkbox': [$on, $off] = crud_switch_labels($f);
+                    $ctl = '<label class="switch"><input type="checkbox" id="' . e($n) . '" name="' . e($n) . '"' . ($vals[$n] ? ' checked' : '') . '><span class="track"></span><span class="txt" data-on="' . e($on) . '" data-off="' . e($off) . '"></span></label>'; break;
                 case 'image':
                     $ctl = (!empty($row[$n]) ? '<img class="thumb" src="' . e(upload_url($row[$n])) . '" alt="">' : '')
                          . '<input type="file" id="' . e($n) . '" name="' . e($n) . '" accept="image/jpeg,image/png,image/webp,image/gif">'
@@ -147,13 +165,13 @@ function crud_run(array $c): void {
         . ' LIMIT ' . (int)$per . ' OFFSET ' . (int)(($page - 1) * $per), $params);
     admin_header($c['title'], $c['active'], $addBtn); ?>
     <div class="toolbar"><span class="count"><?= (int)$total ?> <?= $total === 1 ? 'item' : 'items' ?><?= $s !== '' ? ' matching “' . e($s) . '”' : '' ?></span>
-      <?php if (!empty($c['search'])): ?><form method="get"><input type="text" name="s" placeholder="Search…" value="<?= e($s) ?>"><button class="btn ghost">Search</button><?php if ($s !== ''): ?><a class="btn ghost" href="<?= e($self) ?>">Clear</a><?php endif; ?></form><?php endif; ?></div>
+      <?php if (!empty($c['search'])): ?><form method="get" class="searchbox" data-live-search role="search"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input type="text" name="s" placeholder="Search <?= e(strtolower($c['title'])) ?>…" value="<?= e($s) ?>" autocomplete="off"><?php if ($s !== ''): ?><a class="clear" href="<?= e($self) ?>" aria-label="Clear search">&times;</a><?php endif; ?></form><?php endif; ?></div>
     <div class="card tablewrap"><table class="table"><thead><tr>
       <?php foreach ($c['columns'] as $col): ?><th><?= e($col['label']) ?></th><?php endforeach; ?><th>Added / edited</th><th></th></tr></thead><tbody>
     <?php foreach ($rows as $r): ?><tr>
       <?php foreach ($c['columns'] as $col): $v = $r[$col['name']] ?? ''; $t = $col['type'] ?? ''; ?><td>
         <?php if ($t === 'image'): ?><?= $v ? '<img class="thumb sm" src="' . e(upload_url($v)) . '" alt="">' : '<span class="count">—</span>' ?>
-        <?php elseif ($t === 'bool'): ?><span class="pill <?= $v ? 'on' : 'off' ?>"><?= $v ? 'Yes' : 'No' ?></span>
+        <?php elseif ($t === 'bool'): [$on, $off] = crud_switch_labels(['name' => $col['name']]); ?><form method="post" class="inline-toggle"><?= csrf_field() ?><input type="hidden" name="_do" value="toggle"><input type="hidden" name="id" value="<?= (int)$r['id'] ?>"><input type="hidden" name="field" value="<?= e($col['name']) ?>"><input type="hidden" name="ret" value="<?= e((string)($_SERVER['QUERY_STRING'] ?? '')) ?>"><button class="switch-btn <?= $v ? 'on' : '' ?>" title="<?= e($v ? $on : $off) ?> – click to change" aria-label="<?= e($v ? $on : $off) ?>"><span class="knob"></span></button><span class="swtxt <?= $v ? 'on' : '' ?>"><?= e($v ? $on : $off) ?></span></form>
         <?php elseif ($t === 'money'): ?>Rs. <?= e(number_format((float)$v)) ?>
         <?php else: ?><?= $v === '' || $v === null ? '<span class="count">—</span>' : e($v) ?><?php endif; ?></td><?php endforeach; ?>
       <td class="audit"><small>Added by <b><?= e($r['created_name'] ?? 'unknown') ?></b> · <?= e(substr((string)$r['created_at'], 0, 10)) ?></small>

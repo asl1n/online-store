@@ -22,7 +22,7 @@ admin_header('My Profile', 'account'); echo ui_errors_summary($errors); ?>
 <div class="card profile"><span class="avatar"><?= e(initials($me['name'])) ?></span><dl>
 <dt>Name</dt><dd><b><?= e($me['name']) ?></b></dd><dt>Email</dt><dd><?= e($me['email']) ?></dd>
 <dt>Role</dt><dd><?= $me['role'] === 'super_admin' ? 'Super admin' : 'Admin' ?></dd><dt>Last login</dt><dd><?= e($me['last_login_at'] ?: '—') ?></dd></dl></div>
-<form method="post" class="card formcard" novalidate><?= csrf_field() ?><h2 class="section-title">Edit details</h2><div class="form-grid">
+<form method="post" class="card formcard wide" novalidate><?= csrf_field() ?><h2 class="section-title">Edit details</h2><div class="form-grid">
 <?= ui_field('Full name', ui_input('name', $old['name'] ?? $me['name'], ['maxlength' => 100, 'required' => true]), ['for' => 'name', 'req' => true, 'half' => true, 'error' => $errors['name'] ?? null]) ?>
 <?= ui_field('Email', ui_input('email', $old['email'] ?? $me['email'], ['type' => 'email', 'maxlength' => 150, 'required' => true]), ['for' => 'email', 'req' => true, 'half' => true, 'error' => $errors['email'] ?? null]) ?>
 </div><h2 class="section-title" style="margin-top:26px">Change password <small>(optional)</small></h2><div class="form-grid">

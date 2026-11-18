@@ -79,7 +79,7 @@ function setting(string $key, string $default = ''): string {
     return ($v === null || $v === '') ? $default : (string)$v;
 }
 function favicon_tag(): string { $f = setting('favicon'); return $f ? '<link rel="icon" href="' . e(upload_url($f)) . '">' : ''; }
-function site_name(): string { return setting('site_name', 'Allure International'); }
+function site_name(): string { return setting('site_name', 'Aslin Store'); }
 
 // ---- Security headers ----
 function send_security_headers(): void {

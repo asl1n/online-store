@@ -20,7 +20,7 @@ try {
 ?>
 <!doctype html><meta charset="utf-8"><title>Install</title>
 <body style="font-family:sans-serif;max-width:420px;margin:60px auto">
-<h2>Allure – Install</h2>
+<h2>Aslin Store – Install</h2>
 <?php if ($done): ?>
   <p>Installed. Tables created and super admin set up.</p>
   <p><b>Now delete <code>install.php</code>.</b></p>

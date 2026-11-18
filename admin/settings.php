@@ -62,7 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     foreach ($new as $k => $v) if (in_array($k, ['header_logo', 'footer_logo', 'favicon'], true) && $v) delete_upload($v);
 }
 admin_header('Site Settings', 'settings'); echo ui_errors_summary($errors); ?>
-<form method="post" enctype="multipart/form-data" class="card formcard" novalidate><?= csrf_field() ?>
+<form method="post" enctype="multipart/form-data" class="card formcard wide" novalidate><?= csrf_field() ?>
 <?php foreach ($sections as $title => $items): ?><h2 class="section-title"><?= e($title) ?></h2><div class="form-grid" style="margin-bottom:8px">
 <?php foreach ($items as $k => [$label, $type, $max, $req, $help, $kind, $half]):
     $o = ['for' => $k, 'req' => $req, 'help' => $help, 'half' => $half, 'error' => $errors[$k] ?? null];

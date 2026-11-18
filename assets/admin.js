@@ -49,6 +49,13 @@
     cdlg.close(); f.submit();
   });
 
+  // Live search: submits 1 second after you stop typing (Enter submits instantly)
+  $$('[data-live-search]').forEach(function (f) {
+    var i = $('input', f), t;
+    if (i.value) { i.focus(); var n = i.value.length; i.setSelectionRange(n, n); }
+    i.addEventListener('input', function () { clearTimeout(t); t = setTimeout(function () { f.submit(); }, 1000); });
+  });
+
   // Auto-hide success alerts
   $$('.alert.ok').forEach(function (a) { setTimeout(function () { a.style.display = 'none'; }, 5000); });
 })();
