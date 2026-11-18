@@ -51,6 +51,27 @@ function render_banners(string $page, bool $small = false): void {
     echo '</section>';
 }
 
+/** Small inline icons used in the top bar, footer and contact page. */
+function ico(string $n): string {
+    static $p = [
+        'pin'   => '<path d="M12 21s7-6.2 7-11.5a7 7 0 0 0-14 0C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
+        'phone' => '<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/>',
+        'mail'  => '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',
+        'back'  => '<path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/>',
+    ];
+    return '<svg class="ico" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' . ($p[$n] ?? '') . '</svg>';
+}
+/** "9801, 9802" -> separate tap-to-call links. */
+function phone_links(string $raw): string {
+    $o = [];
+    foreach (preg_split('/\s*[,\/]\s*/', $raw, -1, PREG_SPLIT_NO_EMPTY) as $n) {
+        $d = preg_replace('/[^0-9+]/', '', $n);
+        $o[] = $d !== '' ? '<a href="tel:' . e($d) . '">' . e($n) . '</a>' : e($n);
+    }
+    return '<span class="nums">' . implode('<span class="sep">, </span>', $o) . '</span>';
+}
+function email_link(string $m): string { return '<a href="mailto:' . e($m) . '">' . e($m) . '</a>'; }
+
 function product_card(array $p): string {
     $img = $p['image'] ? '<img src="' . e(upload_url($p['image'])) . '" alt="' . e($p['name']) . '" loading="lazy">' : '<div class="noimg">No image</div>';
     return '<a class="pcard" href="' . e(url('/product.php?slug=' . urlencode($p['slug']))) . '"><div class="pimg">' . $img
@@ -85,7 +106,7 @@ function site_header(string $title, string $active = '', string $desc = '', arra
     $nav = ['home' => ['Home', '/index.php'], 'shop' => ['Shop', '/shop.php'], 'blog' => ['Blog', '/blogs.php'], 'contact' => ['Contact', '/contact.php']];
     $name = site_name(); $full = $title === 'Home' ? $name : $title . ' | ' . $name;
     $curCat = $active === 'shop' ? (string)($_GET['category'] ?? '') : '';
-    $phones = setting('phones'); $addr = setting('address');
+    $phones = setting('phones'); $addr = setting('address'); $email = setting('email');
     $d = seo_trim($desc ?: setting('meta_description')); $origin = site_origin();
     $canon = isset($meta['canonical']) ? $origin . BASE_URL . $meta['canonical'] : $origin . strtok((string)($_SERVER['REQUEST_URI'] ?? '/'), '?');
     $img = $meta['image'] ?? setting('header_logo'); $ogimg = $img ? $origin . upload_url($img) : '';
@@ -99,7 +120,11 @@ function site_header(string $title, string $active = '', string $desc = '', arra
 <meta name="twitter:card" content="<?= $ogimg ? 'summary_large_image' : 'summary' ?>"><meta name="twitter:title" content="<?= e($ogTitle) ?>"><meta name="twitter:description" content="<?= e($d) ?>">
 <?php if (!empty($meta['jsonld'])): ?><script type="application/ld+json"><?= json_encode(['@context' => 'https://schema.org'] + $meta['jsonld'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?></script><?php endif; ?>
 <link rel="stylesheet" href="<?= url('/assets/site.css') ?>"></head><body>
-<?php if ($phones || $addr): ?><div class="strip"><div class="wrap"><span><?= e($addr) ?></span><span><?= $phones ? 'Call ' . e($phones) : '' ?></span></div></div><?php endif; ?>
+<?php if ($phones || $addr || $email): ?><div class="strip"><div class="wrap">
+  <span class="addr"><?php if ($addr): ?><?= ico('pin') ?><?= e($addr) ?><?php endif; ?></span>
+  <div class="reach"><?php if ($phones): ?><span class="item"><?= ico('phone') ?><?= phone_links($phones) ?></span><?php endif; ?>
+  <?php if ($email): ?><span class="item"><?= ico('mail') ?><?= email_link($email) ?></span><?php endif; ?></div>
+</div></div><?php endif; ?>
 <header class="top"><div class="wrap bar">
   <a class="logo" href="<?= url('/index.php') ?>"><?= logo_html('header_logo') ?></a>
   <form class="search" action="<?= url('/shop.php') ?>" method="get" role="search"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input name="q" placeholder="Search products…" maxlength="60" value="<?= e($active === 'shop' ? (string)($_GET['q'] ?? '') : '') ?>"><button class="btn sm">Search</button></form>
@@ -116,6 +141,7 @@ function site_header(string $title, string $active = '', string $desc = '', arra
 function site_footer(): void {
     $cats = fetch_all('SELECT name,slug FROM categories WHERE is_active=1 ORDER BY sort_order, name');
     $fb = setting('facebook_url'); $ig = setting('instagram_url'); $isurl = fn($u) => (bool)preg_match('~^https?://~i', $u);
+    $pby = setting('powered_by'); $pbu = setting('powered_by_url');
     $copy = setting('copyright_text') ?: '© ' . date('Y') . ' ' . site_name() . '. All rights reserved.'; ?>
 <footer><div class="wrap cols">
   <div class="fabout"><a class="logo" href="<?= url('/index.php') ?>"><?= logo_html('footer_logo') ?></a>
@@ -125,10 +151,11 @@ function site_footer(): void {
       <?php if ($isurl($ig)): ?><a href="<?= e($ig) ?>" target="_blank" rel="noopener noreferrer">Instagram</a><?php endif; ?></div><?php endif; ?></div>
   <div><h4>Explore</h4><a href="<?= url('/index.php') ?>">Home</a><a href="<?= url('/shop.php') ?>">Shop</a><a href="<?= url('/blogs.php') ?>">Blog</a><a href="<?= url('/contact.php') ?>">Contact</a></div>
   <?php if ($cats): ?><div><h4>Shop by type</h4><?php foreach ($cats as $c): ?><a href="<?= e(url('/shop.php?category=' . urlencode($c['slug']))) ?>"><?= e($c['name']) ?></a><?php endforeach; ?></div><?php endif; ?>
-  <?php if (setting('phones') || setting('address') || setting('email')): ?><div><h4>Visit &amp; call</h4>
-    <?php if (setting('address')): ?><p><?= e(setting('address')) ?></p><?php endif; ?>
-    <?php if (setting('phones')): ?><p><?= e(setting('phones')) ?></p><?php endif; ?>
-    <?php if (setting('email')): ?><p><?= e(setting('email')) ?></p><?php endif; ?></div><?php endif; ?>
-</div><div class="copy"><?= e($copy) ?></div></footer>
+  <?php if (setting('phones') || setting('address') || setting('email')): ?><div><h4>Visit &amp; call</h4><ul class="ilist">
+    <?php if (setting('address')): ?><li><?= ico('pin') ?><span><?= e(setting('address')) ?></span></li><?php endif; ?>
+    <?php if (setting('phones')): ?><li><?= ico('phone') ?><span><?= phone_links(setting('phones')) ?></span></li><?php endif; ?>
+    <?php if (setting('email')): ?><li><?= ico('mail') ?><span><?= email_link(setting('email')) ?></span></li><?php endif; ?></ul></div><?php endif; ?>
+</div><div class="copy"><div class="wrap copyrow"><span><?= e($copy) ?></span>
+  <?php if ($pby !== ''): ?><span class="powered">Powered by <?= $isurl($pbu) ? '<a href="' . e($pbu) . '" target="_blank" rel="noopener noreferrer">' . e($pby) . '</a>' : e($pby) ?></span><?php endif; ?></div></div></footer>
 <script src="<?= url('/assets/site.js') ?>"></script></body></html>
 <?php }
