@@ -12,5 +12,5 @@ site_header($b['title'], 'blog', $desc, ['type' => 'article', 'image' => $b['ima
     'mainEntityOfPage' => $origin . BASE_URL . $canonPath])]); ?>
 <article class="wrap section narrow"><p class="muted"><a href="<?= url('/blogs.php') ?>">&larr; All posts</a></p>
 <h1><?= e($b['title']) ?></h1><p class="muted"><?= e(substr((string)$b['published_at'], 0, 10)) ?></p>
-<?php if ($b['image']): ?><div class="pimg big"><img src="<?= e(upload_url($b['image'])) ?>" alt="<?= e($b['title']) ?>"></div><?php endif; ?>
-<div class="prose"><?= render_text($b['content']) ?></div></article><?php site_footer();
+<?php if ($b['image']): ?><figure class="cover"><img src="<?= e(upload_url($b['image'])) ?>" alt="<?= e($b['title']) ?>"></figure><?php endif; ?>
+<div class="prose"><?= render_content($b['content']) ?></div></article><?php site_footer();

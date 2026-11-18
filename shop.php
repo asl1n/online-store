@@ -17,6 +17,7 @@ $total = (int)fetch_val("SELECT COUNT(*) $from $W", $params);
 $pages = max(1, (int)ceil($total / $per)); $page = min($page, $pages);
 $items = fetch_all(PRODUCT_SELECT . " $W ORDER BY $order LIMIT " . (int)$per . ' OFFSET ' . (int)(($page - 1) * $per), $params);
 $brands = fetch_all('SELECT name,slug FROM brands WHERE is_active=1 ORDER BY sort_order, name');
+$allCats = fetch_all('SELECT name,slug FROM categories WHERE is_active=1 ORDER BY sort_order, name');
 $catName = $catSlug !== '' ? (string)fetch_val('SELECT name FROM categories WHERE slug=?', [$catSlug]) : '';
 $filtered = $brandSlug !== '' || $catSlug !== '' || $q !== '';
 
@@ -27,7 +28,8 @@ render_banners('shop', true); ?>
 <div class="wrap section">
   <div class="sechead"><div><span class="eyebrow"><?= (int)$total ?> product<?= $total === 1 ? '' : 's' ?></span><h1><?= e($catName ?: 'All products') ?><?= $q !== '' ? ' · “' . e($q) . '”' : '' ?></h1></div></div>
   <form method="get" class="filterbar">
-    <?php if ($catSlug !== ''): ?><input type="hidden" name="category" value="<?= e($catSlug) ?>"><?php endif; ?>
+    <select name="category" data-autosubmit aria-label="Category"><option value="">All categories</option>
+      <?php foreach ($allCats as $c): ?><option value="<?= e($c['slug']) ?>" <?= $catSlug === $c['slug'] ? 'selected' : '' ?>><?= e($c['name']) ?></option><?php endforeach; ?></select>
     <?php if ($q !== ''): ?><input type="hidden" name="q" value="<?= e($q) ?>"><?php endif; ?>
     <select name="brand" data-autosubmit aria-label="Brand"><option value="">All brands</option>
       <?php foreach ($brands as $b): ?><option value="<?= e($b['slug']) ?>" <?= $brandSlug === $b['slug'] ? 'selected' : '' ?>><?= e($b['name']) ?></option><?php endforeach; ?></select>

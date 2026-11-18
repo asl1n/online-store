@@ -8,7 +8,7 @@ function crud_switch_labels(array $f): array {
 }
 function crud_is_half(array $f): bool {
     if (isset($f['half'])) return (bool)$f['half'];
-    if (!empty($f['full']) || in_array($f['type'], ['textarea', 'image'], true)) return false;
+    if (!empty($f['full']) || in_array($f['type'], ['textarea', 'image', 'richtext'], true)) return false;
     return ($f['max'] ?? 100) < 150;
 }
 function crud_options(array $f): array { $o = $f['options'] ?? []; return is_callable($o) ? $o() : $o; }
@@ -48,6 +48,16 @@ function crud_collect(array $c, ?array $existing, int $id): array {
                 elseif (!array_key_exists($s, $opts)) $err[$n] = "That $label is not valid. Please choose from the list.";
                 else $data[$n] = $s;
                 break;
+            case 'richtext':
+                $raw = (string)($_POST[$n] ?? '');
+                if (strlen($raw) > 400000) { $err[$n] = "$label is too large."; break; }
+                if ($raw !== '' && !looks_like_html($raw)) $raw = plain_to_html($raw);      // editor failed to load -> plain text
+                $clean = html_clean($raw);
+                $plain = trim(preg_replace('/[\s\x{00A0}]+/u', ' ', html_entity_decode(strip_tags($clean), ENT_QUOTES | ENT_HTML5, 'UTF-8')));
+                $hasImg = stripos($clean, '<img') !== false;
+                if ($plain === '' && !$hasImg) { if ($req) $err[$n] = "$label is required."; else $data[$n] = null; break; }
+                if (!empty($f['min_len']) && mb_strlen($plain) < $f['min_len'] && !$hasImg) { $err[$n] = "$label must be at least {$f['min_len']} characters."; break; }
+                $data[$n] = $clean; break;
             default: // text, textarea
                 $s = clean_text((string)($_POST[$n] ?? ''), $f['type'] === 'textarea');
                 $max = $f['max'] ?? ($f['type'] === 'textarea' ? 20000 : 255);
@@ -56,7 +66,7 @@ function crud_collect(array $c, ?array $existing, int $id): array {
                 elseif (!empty($f['min_len']) && $s !== '' && mb_strlen($s) < $f['min_len']) $err[$n] = "$label must be at least {$f['min_len']} characters.";
                 elseif ($s !== '' && !empty($f['pattern']) && !preg_match($f['pattern'], $s)) $err[$n] = $f['pattern_msg'] ?? "$label is not in a valid format.";
                 elseif ($s !== '' && !empty($f['unique']) && fetch_val("SELECT COUNT(*) FROM `$table` WHERE LOWER(`$n`)=LOWER(?) AND id<>?", [$s, $id]))
-                    $err[$n] = "A {$c['entity']} named “$s” already exists. Please use a different $label.";
+                    $err[$n] = "A {$c['entity']} named “{$s}” already exists. Please use a different $label.";
                 else $data[$n] = $s === '' ? null : $s;
         }
     }
@@ -128,6 +138,7 @@ function crud_run(array $c): void {
         if ($act === 'edit' && !$row) { flash('err', 'That ' . strtolower($c['entity']) . ' was not found.'); go($self); }
         $vals = $posted ? array_merge(crud_values($c, $row), $posted) : crud_values($c, $row);
         if ($posted) foreach ($c['fields'] as $f) if ($f['type'] === 'checkbox') $vals[$f['name']] = isset($posted[$f['name']]) ? 1 : 0;
+        foreach ($c['fields'] as $f) if ($f['type'] === 'richtext') $GLOBALS['need_editor'] = true;
         admin_header(($act === 'edit' ? 'Edit ' : 'Add ') . $c['entity'], $c['active'], '<a class="btn ghost" href="' . e($self) . '">' . ui_icon_back() . 'Back to list</a>');
         echo ui_errors_summary($errors); ?>
         <form method="post" enctype="multipart/form-data" class="card formcard"><?= csrf_field() ?><div class="form-grid">
@@ -135,6 +146,9 @@ function crud_run(array $c): void {
             $n = $f['name']; $o = ['error' => $errors[$n] ?? null, 'help' => $f['help'] ?? null, 'half' => crud_is_half($f), 'req' => !empty($f['required']), 'for' => $n];
             $req = !empty($f['required']) ? ['required' => true] : [];
             switch ($f['type']) {
+                case 'richtext':
+                    $rv = (string)$vals[$n]; if ($rv !== '' && !looks_like_html($rv)) $rv = plain_to_html($rv);
+                    $ctl = ui_textarea($n, $rv, ['rows' => 12, 'data-editor' => true, 'data-upload' => BASE_URL . '/admin/editor-upload.php', 'data-csrf' => csrf_token()]); break;
                 case 'textarea': $ctl = ui_textarea($n, $vals[$n], ['rows' => $f['rows'] ?? 5, 'maxlength' => $f['max'] ?? 20000] + $req); break;
                 case 'select':
                     $ctl = '<select id="' . e($n) . '" name="' . e($n) . '"><option value="">— Select —</option>';

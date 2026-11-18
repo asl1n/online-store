@@ -45,7 +45,7 @@ function admin_header(string $title, string $active = '', string $actions = ''):
     if ($a['role'] === 'super_admin') { $groups['System'][] = ['admins', 'Admins', 'admins.php']; $groups['System'][] = ['settings', 'Settings', 'settings.php']; }
     ?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= e($title) ?> – <?= e(site_name()) ?> Admin</title><?= favicon_tag() ?>
-<meta name="robots" content="noindex,nofollow"><link rel="stylesheet" href="<?= BASE_URL ?>/assets/admin.css"></head><body class="admin">
+<meta name="robots" content="noindex,nofollow"><?php if (!empty($GLOBALS['need_editor'])): ?><link rel="stylesheet" href="<?= BASE_URL ?>/assets/vendor/ckeditor5/ckeditor5.css"><?php endif; ?><link rel="stylesheet" href="<?= BASE_URL ?>/assets/admin.css"></head><body class="admin">
 <div class="shell">
 <aside class="side" id="side">
   <a class="brand" href="<?= BASE_URL ?>/admin/index.php"><?= e(mb_strtoupper(site_name())) ?><small>ADMIN PANEL</small></a>
@@ -87,6 +87,7 @@ function admin_footer(): void { ?>
   <div class="dlg-actions"><button type="button" class="btn ghost" data-dlg-close>Cancel</button><button class="btn danger">Yes, log out</button></div></form></dialog>
 <dialog id="confirmDlg" class="dlg"><h3 id="cTitle">Are you sure?</h3><p id="cMsg"></p>
   <div class="dlg-actions"><button type="button" class="btn ghost" data-dlg-close>Cancel</button><button type="button" class="btn danger" id="cOk">Yes, continue</button></div></dialog>
+<?php if (!empty($GLOBALS['need_editor'])): ?><script src="<?= BASE_URL ?>/assets/vendor/ckeditor5/ckeditor5.umd.js"></script><script src="<?= BASE_URL ?>/assets/editor-init.js"></script><?php endif; ?>
 <script src="<?= BASE_URL ?>/assets/admin.js"></script></body></html>
 <?php }
 

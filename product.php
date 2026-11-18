@@ -15,7 +15,7 @@ site_header($p['name'], 'shop', $pd, ['type' => 'product', 'image' => $p['image'
 <?php if ($p['short_description']): ?><p><?= e($p['short_description']) ?></p><?php endif; ?>
 <p><a class="btn" href="<?= e(url('/contact.php?product=' . urlencode($p['slug']))) ?>">Enquire about this product</a></p>
 <?php if (setting('phones')): ?><p class="muted">Or call us: <?= e(setting('phones')) ?></p><?php endif; ?></div></div>
-<?php if ($p['description']): ?><h2 class="sec">Description</h2><div class="prose"><?= render_text($p['description']) ?></div><?php endif;
+<?php if ($p['description']): ?><h2 class="sec">Description</h2><div class="prose"><?= render_content($p['description']) ?></div><?php endif;
 $rel = $p['category_slug'] ? fetch_all(PRODUCT_SELECT . ' WHERE p.is_active=1 AND p.category_id=? AND p.id<>? ORDER BY p.id DESC LIMIT 4', [$p['category_id'], $p['id']]) : [];
 if ($rel): ?><h2 class="sec">Related products</h2><div class="grid g4"><?php foreach ($rel as $r) echo product_card($r); ?></div><?php endif; ?></div>
 <?php site_footer();

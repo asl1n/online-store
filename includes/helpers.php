@@ -88,12 +88,102 @@ function site_origin(): string {
 }
 /** Plain-text snippet for meta descriptions (cuts at a word, ~155 chars). */
 function seo_trim(?string $s, int $len = 155): string {
-    $s = trim(preg_replace('/\s+/u', ' ', strip_tags((string)$s)));
+    $s = preg_replace('~</(p|h[1-6]|li|div|blockquote|tr|figcaption)>~i', ' ', (string)$s);
+    $s = trim(preg_replace('/\s+/u', ' ', html_entity_decode(strip_tags($s), ENT_QUOTES | ENT_HTML5, 'UTF-8')));
     if (mb_strlen($s) <= $len) return $s;
     $cut = mb_substr($s, 0, $len); $sp = mb_strrpos($cut, ' ');
     return rtrim(($sp !== false && $sp > $len * 0.6) ? mb_substr($cut, 0, $sp) : $cut, ' ,.;:-') . '…';
 }
 function site_name(): string { return setting('site_name', 'Aslin Store'); }
+
+// ---- Rich text: plain->html, allow-list sanitizer, renderer ----
+function looks_like_html(string $s): bool {
+    return (bool)preg_match('/<\s*(p|h[1-6]|ul|ol|li|blockquote|figure|table|br|img|a|strong|em|b|i|u|s|hr|div|span)\b/i', $s);
+}
+function plain_to_html(?string $s): string {
+    $out = '';
+    foreach (preg_split('/\n\s*\n/', trim((string)$s)) as $p) if (trim($p) !== '') $out .= '<p>' . nl2br(e(trim($p))) . '</p>';
+    return $out;
+}
+/** Allow-list HTML sanitizer (no external libs). Anything not explicitly allowed is removed or unwrapped. */
+function html_clean(string $html): string {
+    $html = trim($html);
+    if ($html === '') return '';
+    $allow = [
+        'p' => [], 'br' => [], 'hr' => [], 'strong' => [], 'em' => [], 'u' => [], 's' => [], 'code' => [], 'pre' => [],
+        'h2' => [], 'h3' => [], 'h4' => [], 'ul' => [], 'ol' => [], 'li' => [], 'blockquote' => [],
+        'a' => ['href', 'target', 'rel'], 'img' => ['src', 'alt', 'width', 'height', 'class'], 'figure' => ['class'], 'figcaption' => [],
+        'table' => [], 'thead' => [], 'tbody' => [], 'tfoot' => [], 'tr' => [], 'th' => ['colspan', 'rowspan'], 'td' => ['colspan', 'rowspan'],
+    ];
+    $rename = ['b' => 'strong', 'i' => 'em', 'strike' => 's', 'del' => 's', 'h1' => 'h2', 'h5' => 'h4', 'h6' => 'h4'];
+    $drop = ['script', 'style', 'iframe', 'object', 'embed', 'form', 'input', 'button', 'textarea', 'select', 'option', 'svg', 'math',
+             'template', 'noscript', 'link', 'meta', 'base', 'video', 'audio', 'canvas', 'frame', 'frameset', 'applet', 'head', 'title'];
+
+    $prev = libxml_use_internal_errors(true);
+    $dom = new DOMDocument();
+    $dom->loadHTML('<?xml encoding="UTF-8"><body>' . $html . '</body>', LIBXML_NOERROR | LIBXML_NOWARNING | LIBXML_HTML_NODEFDTD);
+    libxml_clear_errors(); libxml_use_internal_errors($prev);
+    $body = $dom->getElementsByTagName('body')->item(0);
+    if (!$body) return '';
+
+    $walk = function (DOMNode $parent) use (&$walk, $allow, $rename, $drop) {
+        foreach (iterator_to_array($parent->childNodes) as $n) {
+            if ($n instanceof DOMText) continue;
+            if (!($n instanceof DOMElement)) { $parent->removeChild($n); continue; }       // comments, processing instructions
+            $tag = strtolower($n->nodeName);
+            if (in_array($tag, $drop, true)) { $parent->removeChild($n); continue; }
+            if (isset($rename[$tag])) {
+                $new = $n->ownerDocument->createElement($rename[$tag]);
+                while ($n->firstChild) $new->appendChild($n->firstChild);
+                $parent->replaceChild($new, $n); $n = $new; $tag = $rename[$tag];
+            }
+            if (!isset($allow[$tag])) {                                                      // unknown tag: keep its (cleaned) content only
+                $walk($n);
+                while ($n->firstChild) $parent->insertBefore($n->firstChild, $n);
+                $parent->removeChild($n); continue;
+            }
+            $names = []; foreach ($n->attributes as $a) $names[] = $a->nodeName;
+            foreach ($names as $an) {
+                $ln = strtolower($an); $val = $n->getAttribute($an);
+                if (!in_array($ln, $allow[$tag], true)) { $n->removeAttribute($an); continue; }
+                switch ($ln) {
+                    case 'href':
+                        $v = preg_replace('/[\x00-\x20\x7F]+/', '', $val);
+                        if (preg_match('~^(https?://|mailto:|tel:|#|/(?!/))~i', $v)) $n->setAttribute('href', $v); else $n->removeAttribute('href');
+                        break;
+                    case 'src':
+                        $v = preg_replace('/[\x00-\x20\x7F]+/', '', $val);
+                        if (preg_match('~^(https?://|/(?!/))~i', $v)) $n->setAttribute('src', $v); else $n->removeAttribute('src');
+                        break;
+                    case 'target': if ($val !== '_blank') $n->removeAttribute('target'); break;
+                    case 'rel': $n->removeAttribute('rel'); break;
+                    case 'alt': $n->setAttribute('alt', mb_substr($val, 0, 200)); break;
+                    case 'width': case 'height': case 'colspan': case 'rowspan':
+                        if (!preg_match('/^\d{1,4}$/', $val)) $n->removeAttribute($an); break;
+                    case 'class':
+                        $keep = array_filter(preg_split('/\s+/', trim($val)), fn($t) => preg_match('/^(image|image-inline|image-style-[a-z-]+|image_resized|table)$/', $t));
+                        if ($keep) $n->setAttribute('class', implode(' ', $keep)); else $n->removeAttribute('class');
+                        break;
+                }
+            }
+            if ($tag === 'a' && $n->getAttribute('target') === '_blank') $n->setAttribute('rel', 'noopener noreferrer');
+            if ($tag === 'img') {
+                if (!$n->hasAttribute('src')) { $parent->removeChild($n); continue; }
+                $n->setAttribute('loading', 'lazy');
+            }
+            $walk($n);
+        }
+    };
+    $walk($body);
+    $out = ''; foreach ($body->childNodes as $c) $out .= $dom->saveHTML($c);
+    $out = preg_replace_callback('/&#(\d+);/', fn($m) => (int)$m[1] > 127 ? mb_chr((int)$m[1], 'UTF-8') : $m[0], $out);
+    return trim($out);
+}
+/** Output-safe HTML for a stored content field (new rich text or old plain text). */
+function render_content(?string $s): string {
+    $s = (string)$s;
+    return looks_like_html($s) ? html_clean($s) : plain_to_html($s);
+}
 
 // ---- Security headers ----
 function send_security_headers(): void {
@@ -101,6 +191,6 @@ function send_security_headers(): void {
     header('X-Content-Type-Options: nosniff');
     header('X-Frame-Options: DENY');
     header('Referrer-Policy: strict-origin-when-cross-origin');
-    header("Content-Security-Policy: default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; frame-ancestors 'none'; form-action 'self'; base-uri 'self'");
+    header("Content-Security-Policy: default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; frame-ancestors 'none'; form-action 'self'; base-uri 'self'");
 }
 send_security_headers();

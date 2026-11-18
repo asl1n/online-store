@@ -14,3 +14,10 @@ document.querySelectorAll('[data-slider]').forEach(function (el) {
 var nb = document.querySelector('[data-nav-toggle]');
 if (nb) nb.addEventListener('click', function () { document.getElementById('mainnav').classList.toggle('open'); });
 document.querySelectorAll('[data-autosubmit]').forEach(function (s) { s.addEventListener('change', function () { s.form.submit(); }); });
+
+document.querySelectorAll('.navdrop').forEach(function (d) {
+  var b = d.querySelector('[data-drop]');
+  b.addEventListener('click', function (e) { e.stopPropagation(); var o = d.classList.toggle('open'); b.setAttribute('aria-expanded', o); });
+  document.addEventListener('click', function (e) { if (!d.contains(e.target)) { d.classList.remove('open'); b.setAttribute('aria-expanded', 'false'); } });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { d.classList.remove('open'); b.setAttribute('aria-expanded', 'false'); } });
+});

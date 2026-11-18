@@ -13,7 +13,7 @@ crud_run([
     ['name' => 'is_featured', 'label' => 'Featured on home', 'type' => 'checkbox', 'half' => true],
     ['name' => 'image', 'label' => 'Image', 'type' => 'image'],
     ['name' => 'short_description', 'label' => 'Short description', 'type' => 'text', 'max' => 300, 'help' => 'Also used as the Google (meta) description. Aim for under 155 characters.'],
-    ['name' => 'description', 'label' => 'Full description', 'type' => 'textarea', 'rows' => 8],
+    ['name' => 'description', 'label' => 'Full description', 'type' => 'richtext', 'help' => 'Format with headings, lists, tables and images.'],
     ['name' => 'is_active', 'label' => 'Active', 'type' => 'checkbox', 'half' => true, 'default' => 1],
   ],
   'columns' => [['name' => 'image', 'label' => 'Image', 'type' => 'image'], ['name' => 'name', 'label' => 'Name'],
