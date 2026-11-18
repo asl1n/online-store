@@ -20,9 +20,9 @@ site_header('Contact', 'contact', 'Contact ' . site_name() . ' for product enqui
 <label>Message<textarea name="message" rows="6" maxlength="3000" required><?= $v('message') ?></textarea></label>
 <?php if (isset($errors['message'])): ?><div class="err"><?= e($errors['message']) ?></div><?php endif; ?>
 <button class="btn">Send message</button></form>
-<div class="infobox"><h3>Get in touch</h3>
-<?php if (setting('phones')): ?><p><b>Phone</b><br><?= e(setting('phones')) ?></p><?php endif; ?>
-<?php if (setting('address')): ?><p><b>Visit us</b><br><?= e(setting('address')) ?></p><?php endif; ?>
-<?php if (setting('email')): ?><p><b>Email</b><br><?= e(setting('email')) ?></p><?php endif; ?>
-<?php if (!setting('phones') && !setting('address') && !setting('email')): ?><p class="muted">Send us a message and we will reply soon.</p><?php endif; ?></div></div></div>
+<div class="infobox"><h3>Get in touch</h3><p class="muted">Call, email or send us a message. We usually reply within a day.</p>
+<?php if (setting('phones') || setting('email') || setting('address')): ?><ul class="ilist">
+<?php if (setting('phones')): ?><li><span class="ibadge"><?= ico('phone') ?></span><div><small>Call us</small><span><?= phone_links(setting('phones')) ?></span></div></li><?php endif; ?>
+<?php if (setting('email')): ?><li><span class="ibadge"><?= ico('mail') ?></span><div><small>Email us</small><span><?= email_link(setting('email')) ?></span></div></li><?php endif; ?>
+<?php if (setting('address')): ?><li><span class="ibadge"><?= ico('pin') ?></span><div><small>Visit us</small><span><?= e(setting('address')) ?></span></div></li><?php endif; ?></ul><?php endif; ?></div></div></div>
 <?php site_footer();
