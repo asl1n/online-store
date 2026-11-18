@@ -1,7 +1,7 @@
 <?php
 require __DIR__ . '/../includes/admin_layout.php';
 $me = require_admin();
-admin_header('Dashboard', 'index', '<a class="btn add" href="' . BASE_URL . '/admin/products.php?action=new">+ Add Product</a>');
+admin_header('Dashboard', 'index', '<a class="btn" href="' . BASE_URL . '/admin/products.php?action=new">' . ui_icon_plus() . 'Add Product</a>');
 $stats = [['Products', 'products', 'products.php'], ['Brands', 'brands', 'brands.php'], ['Categories', 'categories', 'categories.php'], ['Blogs', 'blogs', 'blogs.php'], ['Banners', 'banners', 'banners.php']];
 echo '<p class="count" style="margin-top:-8px">Welcome back, <b>' . e($me['name']) . '</b>.</p><div class="stats">';
 foreach ($stats as [$l, $t, $href]) echo '<a class="card stat" href="' . BASE_URL . '/admin/' . $href . '"><b>' . (int)fetch_val("SELECT COUNT(*) FROM `$t`") . '</b><span>' . e($l) . '</span></a>';

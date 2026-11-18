@@ -120,7 +120,7 @@ function crud_run(array $c): void {
         $posted = $_POST; $act = $id ? 'edit' : 'new';
     }
 
-    $addBtn = '<a class="btn add" href="' . e($self) . '?action=new">+ Add ' . e($c['entity']) . '</a>';
+    $addBtn = '<a class="btn" href="' . e($self) . '?action=new">' . ui_icon_plus() . 'Add ' . e($c['entity']) . '</a>';
 
     // ---------- FORM ----------
     if ($act === 'new' || $act === 'edit') {
@@ -128,7 +128,7 @@ function crud_run(array $c): void {
         if ($act === 'edit' && !$row) { flash('err', 'That ' . strtolower($c['entity']) . ' was not found.'); go($self); }
         $vals = $posted ? array_merge(crud_values($c, $row), $posted) : crud_values($c, $row);
         if ($posted) foreach ($c['fields'] as $f) if ($f['type'] === 'checkbox') $vals[$f['name']] = isset($posted[$f['name']]) ? 1 : 0;
-        admin_header(($act === 'edit' ? 'Edit ' : 'Add ') . $c['entity'], $c['active'], '<a class="btn ghost" href="' . e($self) . '">&larr; Back to list</a>');
+        admin_header(($act === 'edit' ? 'Edit ' : 'Add ') . $c['entity'], $c['active'], '<a class="btn ghost" href="' . e($self) . '">' . ui_icon_back() . 'Back to list</a>');
         echo ui_errors_summary($errors); ?>
         <form method="post" enctype="multipart/form-data" class="card formcard"><?= csrf_field() ?><div class="form-grid">
         <?php foreach ($c['fields'] as $f):

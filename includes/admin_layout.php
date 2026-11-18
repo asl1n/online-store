@@ -8,6 +8,8 @@ function initials(string $n): string {
 function go(string $url): never { header('Location: ' . $url); exit; }
 
 // ---------- shared UI components ----------
+function ui_icon_plus(): string { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>'; }
+function ui_icon_back(): string { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>'; }
 /** $o keys: error, help, half, req, for */
 function ui_field(string $label, string $control, array $o = []): string {
     $cls = 'field' . (empty($o['half']) ? ' span2' : '') . (!empty($o['error']) ? ' has-error' : '');
