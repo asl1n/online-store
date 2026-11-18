@@ -81,7 +81,7 @@ function logo_html(string $key): string {
 
 /** $meta keys: image (upload path), type, canonical (path after BASE_URL), noindex, jsonld (array). */
 function site_header(string $title, string $active = '', string $desc = '', array $meta = []): void {
-    $cats = fetch_all('SELECT name,slug FROM categories WHERE is_active=1 ORDER BY sort_order, name');
+    $cats = fetch_all('SELECT c.name,c.slug,COUNT(p.id) AS cnt FROM categories c LEFT JOIN products p ON p.category_id=c.id AND p.is_active=1 WHERE c.is_active=1 GROUP BY c.id ORDER BY c.sort_order, c.name');
     $nav = ['home' => ['Home', '/index.php'], 'shop' => ['Shop', '/shop.php'], 'blog' => ['Blog', '/blogs.php'], 'contact' => ['Contact', '/contact.php']];
     $name = site_name(); $full = $title === 'Home' ? $name : $title . ' | ' . $name;
     $curCat = $active === 'shop' ? (string)($_GET['category'] ?? '') : '';
@@ -104,10 +104,11 @@ function site_header(string $title, string $active = '', string $desc = '', arra
   <a class="logo" href="<?= url('/index.php') ?>"><?= logo_html('header_logo') ?></a>
   <form class="search" action="<?= url('/shop.php') ?>" method="get" role="search"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input name="q" placeholder="Search products…" maxlength="60" value="<?= e($active === 'shop' ? (string)($_GET['q'] ?? '') : '') ?>"><button class="btn sm">Search</button></form>
   <button class="burger" data-nav-toggle aria-label="Menu">&#9776;</button>
-  <nav id="mainnav"><?php foreach ($nav as $k => [$l, $h]): ?><a class="<?= $k === $active ? 'on' : '' ?>" href="<?= url($h) ?>"><?= $l ?></a><?php endforeach; ?></nav>
+  <nav id="mainnav"><?php foreach ($nav as $k => [$l, $h]): ?><a class="<?= ($k === $active && !($k === 'shop' && $curCat !== '')) ? 'on' : '' ?>" href="<?= url($h) ?>"><?= $l ?></a>
+<?php if ($k === 'shop' && $cats): ?><div class="navdrop<?= $curCat !== '' ? ' has-on' : '' ?>"><button type="button" data-drop aria-haspopup="true" aria-expanded="false">Categories <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+  <div class="droppanel" style="--cols:<?= count($cats) > 8 ? 2 : 1 ?>"><?php foreach ($cats as $c): ?><a class="<?= $curCat === $c['slug'] ? 'on' : '' ?>" href="<?= e(url('/shop.php?category=' . urlencode($c['slug']))) ?>"><span><?= e($c['name']) ?></span><small><?= (int)$c['cnt'] ?></small></a><?php endforeach; ?></div></div><?php endif; ?>
+<?php endforeach; ?></nav>
 </div>
-<?php if ($cats): ?><div class="wrap chips"><a class="chip <?= $active === 'shop' && $curCat === '' ? 'on' : '' ?>" href="<?= url('/shop.php') ?>">All products</a>
-<?php foreach ($cats as $c): ?><a class="chip <?= $curCat === $c['slug'] ? 'on' : '' ?>" href="<?= e(url('/shop.php?category=' . urlencode($c['slug']))) ?>"><?= e($c['name']) ?></a><?php endforeach; ?></div><?php endif; ?>
 </header>
 <?php foreach (flashes() as [$t, $m]): ?><div class="wrap"><div class="flash <?= e($t) ?>"><?= e($m) ?></div></div><?php endforeach;
 }
