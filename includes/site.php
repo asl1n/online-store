@@ -60,7 +60,7 @@ function product_card(array $p): string {
 }
 function blog_card(array $b): string {
     return '<a class="pcard blog" href="' . e(url('/blog.php?slug=' . urlencode($b['slug']))) . '">'
-        . ($b['image'] ? '<div class="pimg"><img src="' . e(upload_url($b['image'])) . '" alt="" loading="lazy"></div>' : '')
+        . ($b['image'] ? '<div class="pimg"><img src="' . e(upload_url($b['image'])) . '" alt="' . e($b['title']) . '" loading="lazy"></div>' : '')
         . '<div class="pbody"><small>' . e(substr((string)$b['published_at'], 0, 10)) . '</small><h3>' . e($b['title']) . '</h3>'
         . '<p class="muted">' . e($b['excerpt']) . '</p></div></a>';
 }
@@ -79,14 +79,25 @@ function logo_html(string $key): string {
     return '<span class="logo-text"><b>' . e($p[0]) . '</b>' . (isset($p[1]) ? '<i>' . e($p[1]) . '</i>' : '') . '</span>';
 }
 
-function site_header(string $title, string $active = '', string $desc = ''): void {
+/** $meta keys: image (upload path), type, canonical (path after BASE_URL), noindex, jsonld (array). */
+function site_header(string $title, string $active = '', string $desc = '', array $meta = []): void {
     $cats = fetch_all('SELECT name,slug FROM categories WHERE is_active=1 ORDER BY sort_order, name');
     $nav = ['home' => ['Home', '/index.php'], 'shop' => ['Shop', '/shop.php'], 'blog' => ['Blog', '/blogs.php'], 'contact' => ['Contact', '/contact.php']];
     $name = site_name(); $full = $title === 'Home' ? $name : $title . ' | ' . $name;
     $curCat = $active === 'shop' ? (string)($_GET['category'] ?? '') : '';
     $phones = setting('phones'); $addr = setting('address');
+    $d = seo_trim($desc ?: setting('meta_description')); $origin = site_origin();
+    $canon = isset($meta['canonical']) ? $origin . BASE_URL . $meta['canonical'] : $origin . strtok((string)($_SERVER['REQUEST_URI'] ?? '/'), '?');
+    $img = $meta['image'] ?? setting('header_logo'); $ogimg = $img ? $origin . upload_url($img) : '';
+    $ogTitle = $title === 'Home' ? $name : $title;
     ?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title><?= e($full) ?></title><meta name="description" content="<?= e($desc ?: setting('meta_description')) ?>"><?= favicon_tag() ?>
+<title><?= e($full) ?></title><meta name="description" content="<?= e($d) ?>"><?= favicon_tag() ?>
+<link rel="canonical" href="<?= e($canon) ?>">
+<?php if (!empty($meta['noindex'])): ?><meta name="robots" content="noindex,follow"><?php endif; ?>
+<meta property="og:site_name" content="<?= e($name) ?>"><meta property="og:type" content="<?= e($meta['type'] ?? 'website') ?>"><meta property="og:title" content="<?= e($ogTitle) ?>">
+<meta property="og:description" content="<?= e($d) ?>"><meta property="og:url" content="<?= e($canon) ?>"><?php if ($ogimg): ?><meta property="og:image" content="<?= e($ogimg) ?>"><?php endif; ?>
+<meta name="twitter:card" content="<?= $ogimg ? 'summary_large_image' : 'summary' ?>"><meta name="twitter:title" content="<?= e($ogTitle) ?>"><meta name="twitter:description" content="<?= e($d) ?>">
+<?php if (!empty($meta['jsonld'])): ?><script type="application/ld+json"><?= json_encode(['@context' => 'https://schema.org'] + $meta['jsonld'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?></script><?php endif; ?>
 <link rel="stylesheet" href="<?= url('/assets/site.css') ?>"></head><body>
 <?php if ($phones || $addr): ?><div class="strip"><div class="wrap"><span><?= e($addr) ?></span><span><?= $phones ? 'Call ' . e($phones) : '' ?></span></div></div><?php endif; ?>
 <header class="top"><div class="wrap bar">

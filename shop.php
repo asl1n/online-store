@@ -20,7 +20,9 @@ $brands = fetch_all('SELECT name,slug FROM brands WHERE is_active=1 ORDER BY sor
 $catName = $catSlug !== '' ? (string)fetch_val('SELECT name FROM categories WHERE slug=?', [$catSlug]) : '';
 $filtered = $brandSlug !== '' || $catSlug !== '' || $q !== '';
 
-site_header($catName ?: 'Shop', 'shop');
+$canonPath = ($catSlug !== '' && $brandSlug === '') ? '/shop.php?category=' . urlencode($catSlug) : (($brandSlug !== '' && $catSlug === '') ? '/shop.php?brand=' . urlencode($brandSlug) : '/shop.php');
+$shopDesc = $catName ? 'Shop ' . $catName . ' at ' . site_name() . '. Compare prices and brands, then send us an enquiry.' : 'Browse all products at ' . site_name() . ': TVs, speakers, headphones, gaming and more.';
+site_header($catName ?: 'Shop', 'shop', $shopDesc, ['canonical' => $canonPath, 'noindex' => $q !== '']);
 render_banners('shop', true); ?>
 <div class="wrap section">
   <div class="sechead"><div><span class="eyebrow"><?= (int)$total ?> product<?= $total === 1 ? '' : 's' ?></span><h1><?= e($catName ?: 'All products') ?><?= $q !== '' ? ' · “' . e($q) . '”' : '' ?></h1></div></div>

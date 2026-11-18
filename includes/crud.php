@@ -6,6 +6,11 @@ function crud_switch_labels(array $f): array {
     $map = ['is_active' => ['Active', 'Inactive'], 'is_published' => ['Published', 'Draft'], 'is_featured' => ['Featured', 'Not featured']];
     return [$f['on'] ?? ($map[$f['name']][0] ?? 'Yes'), $f['off'] ?? ($map[$f['name']][1] ?? 'No')];
 }
+function crud_is_half(array $f): bool {
+    if (isset($f['half'])) return (bool)$f['half'];
+    if (!empty($f['full']) || in_array($f['type'], ['textarea', 'image'], true)) return false;
+    return ($f['max'] ?? 100) < 150;
+}
 function crud_options(array $f): array { $o = $f['options'] ?? []; return is_callable($o) ? $o() : $o; }
 
 function crud_values(array $c, ?array $row): array {
@@ -127,7 +132,7 @@ function crud_run(array $c): void {
         echo ui_errors_summary($errors); ?>
         <form method="post" enctype="multipart/form-data" class="card formcard"><?= csrf_field() ?><div class="form-grid">
         <?php foreach ($c['fields'] as $f):
-            $n = $f['name']; $o = ['error' => $errors[$n] ?? null, 'help' => $f['help'] ?? null, 'half' => !empty($f['half']), 'req' => !empty($f['required']), 'for' => $n];
+            $n = $f['name']; $o = ['error' => $errors[$n] ?? null, 'help' => $f['help'] ?? null, 'half' => crud_is_half($f), 'req' => !empty($f['required']), 'for' => $n];
             $req = !empty($f['required']) ? ['required' => true] : [];
             switch ($f['type']) {
                 case 'textarea': $ctl = ui_textarea($n, $vals[$n], ['rows' => $f['rows'] ?? 5, 'maxlength' => $f['max'] ?? 20000] + $req); break;

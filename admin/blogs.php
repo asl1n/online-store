@@ -10,7 +10,7 @@ crud_run([
   'fields' => [
     ['name' => 'title', 'label' => 'Title', 'type' => 'text', 'required' => true, 'max' => 200],
     ['name' => 'image', 'label' => 'Cover image', 'type' => 'image'],
-    ['name' => 'excerpt', 'label' => 'Short excerpt', 'type' => 'text', 'max' => 300],
+    ['name' => 'excerpt', 'label' => 'Short description', 'type' => 'text', 'max' => 200, 'help' => 'Shown on blog cards and used as the Google (meta) description. Aim for under 155 characters.'],
     ['name' => 'content', 'label' => 'Content', 'type' => 'textarea', 'rows' => 14, 'required' => true, 'min_len' => 20, 'help' => 'Plain text. Blank line = new paragraph.'],
     ['name' => 'is_published', 'label' => 'Published', 'type' => 'checkbox', 'default' => 1],
   ],

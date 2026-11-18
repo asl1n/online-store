@@ -14,7 +14,7 @@ if ($id) {
     if (!$m) { flash('err', 'That message no longer exists.'); go($self); }
     q('UPDATE contact_messages SET is_read=1 WHERE id=?', [$id]);
     admin_header('Message', 'messages', '<a class="btn ghost" href="' . e($self) . '">&larr; Back to inbox</a>'); ?>
-    <div class="card pad msgview" style="max-width:860px">
+    <div class="card pad msgview">
       <p><b>From:</b> <?= e($m['name']) ?> &lt;<a href="mailto:<?= e($m['email']) ?>"><?= e($m['email']) ?></a>&gt;</p>
       <p><b>Phone:</b> <?= e($m['phone'] ?: '—') ?></p><p><b>Subject:</b> <?= e($m['subject'] ?: '—') ?></p><p><b>Received:</b> <?= e($m['created_at']) ?></p>
       <hr style="border:0;border-top:1px solid var(--line);margin:16px 0"><p style="white-space:pre-wrap"><?= e($m['message']) ?></p>

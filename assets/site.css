@@ -79,3 +79,9 @@ footer .logo-img img{height:54px}footer .logo-text b{color:#fff}footer h4{color:
   .grid,.grid.g3{grid-template-columns:repeat(2,1fr);gap:12px}.hero{height:320px;border-radius:22px}.caption p{font-size:15px}.arrow{display:none}
   .section{padding:26px 16px}.wrap{padding:0 16px}h1{font-size:27px}.cols{grid-template-columns:1fr}.cta{padding:28px}.pbody{padding:12px 14px 14px}.rail .pcard{flex-basis:210px}
 }
+
+/* round 3 tweaks */
+#mainnav a.on{background:var(--soft);color:var(--pri)}
+select{padding:7px 30px 7px 14px;font-size:14px;border-radius:99px;max-width:200px}
+.search{max-width:380px;padding:3px 3px 3px 14px}.search input{font-size:14.5px;padding:8px 4px}.search .btn.sm{padding:10px 22px;font-size:14.5px}
+@media(max-width:760px){.search{max-width:none}}

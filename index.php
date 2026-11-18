@@ -1,6 +1,7 @@
 <?php
 require __DIR__ . '/includes/site.php';
-site_header('Home', 'home');
+$o = site_origin() . BASE_URL;
+site_header('Home', 'home', '', ['canonical' => '/', 'jsonld' => array_filter(['@type' => 'Organization', 'name' => site_name(), 'url' => $o . '/', 'logo' => setting('header_logo') ? site_origin() . upload_url(setting('header_logo')) : null])]);
 if (banners_for('home')) render_banners('home');
 else echo '<section class="hero plain"><div class="caption"><span class="eyebrow">Welcome to ' . e(site_name()) . '</span><h2>Sound, screens &amp; play — picked with care.</h2><p>TVs, speakers, headphones and gaming gear you will actually love.</p><a class="btn" href="' . url('/shop.php') . '">Start shopping</a></div></section>';
 

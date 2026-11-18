@@ -11,7 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$errors) { $error = admin_login($email, $pw); if (!$error) redirect('/admin/index.php'); }
 }
 ?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Admin Login – <?= e(site_name()) ?></title><?= favicon_tag() ?><link rel="stylesheet" href="<?= BASE_URL ?>/assets/admin.css"></head>
+<title>Admin Login – <?= e(site_name()) ?></title><?= favicon_tag() ?><meta name="robots" content="noindex,nofollow"><link rel="stylesheet" href="<?= BASE_URL ?>/assets/admin.css"></head>
 <body class="login"><form method="post" class="card loginbox" novalidate><?= csrf_field() ?>
 <div class="lb"><b><?= e(mb_strtoupper(site_name())) ?></b><small>ADMIN PANEL</small></div>
 <?= $error ? ui_alert('err', $error) : '' ?>

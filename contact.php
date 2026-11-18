@@ -10,7 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!empty($_GET['product']) && ($pr = fetch_one('SELECT name FROM products WHERE slug=? AND is_active=1', [(string)$_GET['product']]))) $old['subject'] = 'Enquiry: ' . $pr['name'];
 }
 $v = fn(string $k) => e($old[$k] ?? '');
-site_header('Contact', 'contact'); render_banners('contact', true); ?>
+site_header('Contact', 'contact', 'Contact ' . site_name() . ' for product enquiries, pricing and support.'); render_banners('contact', true); ?>
 <div class="wrap section"><div class="sechead"><div><span class="eyebrow">We reply fast</span><h1>Contact us</h1></div></div><div class="detail">
 <form method="post" class="cform"><?= csrf_field() ?><?= contact_honeypot_field() ?>
 <?php if (isset($errors['form'])): ?><div class="flash err"><?= e($errors['form']) ?></div><?php endif; ?>

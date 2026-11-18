@@ -79,6 +79,20 @@ function setting(string $key, string $default = ''): string {
     return ($v === null || $v === '') ? $default : (string)$v;
 }
 function favicon_tag(): string { $f = setting('favicon'); return $f ? '<link rel="icon" href="' . e(upload_url($f)) . '">' : ''; }
+/** Public origin for canonical/OG URLs. Optionally define SITE_URL in config.php (recommended in production). */
+function site_origin(): string {
+    if (defined('SITE_URL') && SITE_URL) return rtrim((string)SITE_URL, '/');
+    $host = preg_replace('/[^A-Za-z0-9.\-:\[\]]/', '', $_SERVER['HTTP_HOST'] ?? 'localhost');
+    $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
+    return ($https ? 'https' : 'http') . '://' . $host;
+}
+/** Plain-text snippet for meta descriptions (cuts at a word, ~155 chars). */
+function seo_trim(?string $s, int $len = 155): string {
+    $s = trim(preg_replace('/\s+/u', ' ', strip_tags((string)$s)));
+    if (mb_strlen($s) <= $len) return $s;
+    $cut = mb_substr($s, 0, $len); $sp = mb_strrpos($cut, ' ');
+    return rtrim(($sp !== false && $sp > $len * 0.6) ? mb_substr($cut, 0, $sp) : $cut, ' ,.;:-') . '…';
+}
 function site_name(): string { return setting('site_name', 'Aslin Store'); }
 
 // ---- Security headers ----

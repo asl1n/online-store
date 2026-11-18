@@ -2,7 +2,11 @@
 require __DIR__ . '/includes/site.php';
 $p = fetch_one(PRODUCT_SELECT . ' WHERE p.is_active=1 AND p.slug=?', [(string)($_GET['slug'] ?? '')]);
 if (!$p) not_found();
-site_header($p['name'], 'shop', (string)$p['short_description']); ?>
+$pd = seo_trim($p['short_description'] ?: $p['description']); $canonPath = '/product.php?slug=' . urlencode($p['slug']); $origin = site_origin();
+site_header($p['name'], 'shop', $pd, ['type' => 'product', 'image' => $p['image'], 'canonical' => $canonPath, 'jsonld' => array_filter([
+    '@type' => 'Product', 'name' => $p['name'], 'description' => $pd, 'image' => $p['image'] ? [$origin . upload_url($p['image'])] : null,
+    'brand' => $p['brand_name'] ? ['@type' => 'Brand', 'name' => $p['brand_name']] : null, 'category' => $p['category_name'] ?: null,
+    'offers' => ['@type' => 'Offer', 'url' => $origin . BASE_URL . $canonPath, 'priceCurrency' => 'NPR', 'price' => number_format((float)$p['price'], 2, '.', '')]])]); ?>
 <div class="wrap section"><p class="muted"><a href="<?= url('/shop.php') ?>">Shop</a><?php if ($p['category_name']): ?> / <a href="<?= e(url('/shop.php?category=' . urlencode($p['category_slug']))) ?>"><?= e($p['category_name']) ?></a><?php endif; ?></p>
 <div class="detail"><div class="pimg big"><?= $p['image'] ? '<img src="' . e(upload_url($p['image'])) . '" alt="' . e($p['name']) . '">' : '<div class="noimg">No image</div>' ?></div>
 <div><h1><?= e($p['name']) ?></h1>
