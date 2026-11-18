@@ -58,6 +58,8 @@ function ico(string $n): string {
         'phone' => '<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/>',
         'mail'  => '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',
         'back'  => '<path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/>',
+        'left'  => '<path d="M15 6l-6 6 6 6"/>',
+        'right' => '<path d="M9 6l6 6-6 6"/>',
     ];
     return '<svg class="ico" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' . ($p[$n] ?? '') . '</svg>';
 }
@@ -155,7 +157,7 @@ function site_footer(): void {
     <?php if (setting('address')): ?><li><?= ico('pin') ?><span><?= e(setting('address')) ?></span></li><?php endif; ?>
     <?php if (setting('phones')): ?><li><?= ico('phone') ?><span><?= phone_links(setting('phones')) ?></span></li><?php endif; ?>
     <?php if (setting('email')): ?><li><?= ico('mail') ?><span><?= email_link(setting('email')) ?></span></li><?php endif; ?></ul></div><?php endif; ?>
-</div><div class="copy"><div class="wrap copyrow"><span><?= e($copy) ?></span>
+</div><div class="copy"><div class="wrap copyrow<?= $pby === '' ? ' solo' : '' ?>"><span><?= e($copy) ?></span>
   <?php if ($pby !== ''): ?><span class="powered">Powered by <?= $isurl($pbu) ? '<a href="' . e($pbu) . '" target="_blank" rel="noopener noreferrer">' . e($pby) . '</a>' : e($pby) ?></span><?php endif; ?></div></div></footer>
 <script src="<?= url('/assets/site.js') ?>"></script></body></html>
 <?php }

@@ -11,7 +11,7 @@ if ($cats): ?><section class="wrap section"><div class="sechead"><div><span clas
 
 $feat = fetch_all(PRODUCT_SELECT . ' WHERE p.is_active=1 AND p.is_featured=1 ORDER BY p.id DESC LIMIT 12');
 if ($feat): ?><section class="wrap section"><div class="sechead"><div><span class="eyebrow">Hand-picked</span><h2 class="sec">Featured</h2></div><a class="more" href="<?= url('/shop.php') ?>">See everything &rarr;</a></div>
-<div class="rail"><?php foreach ($feat as $p) echo product_card($p); ?></div></section><?php endif;
+<div class="railwrap" data-rail><button type="button" class="railbtn" data-rail-prev aria-label="Previous products"><?= ico('left') ?></button><div class="rail" data-rail-track><?php foreach ($feat as $p) echo product_card($p); ?></div><button type="button" class="railbtn" data-rail-next aria-label="Next products"><?= ico('right') ?></button></div></section><?php endif;
 
 $new = fetch_all(PRODUCT_SELECT . ' WHERE p.is_active=1 ORDER BY p.id DESC LIMIT 4');
 if ($new): ?><section class="wrap section"><div class="sechead"><div><span class="eyebrow">Just landed</span><h2 class="sec">New arrivals</h2></div><a class="more" href="<?= url('/shop.php') ?>">Shop all &rarr;</a></div>
