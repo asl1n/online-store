@@ -2,7 +2,7 @@
 require __DIR__ . '/includes/site.php';
 $p = fetch_one(PRODUCT_SELECT . ' WHERE p.is_active=1 AND p.slug=?', [(string)($_GET['slug'] ?? '')]);
 if (!$p) not_found();
-$pd = seo_trim($p['short_description'] ?: $p['description']); $canonPath = '/product.php?slug=' . urlencode($p['slug']); $origin = site_origin();
+$pd = seo_trim($p['short_description'] ?: $p['description']); $canonPath = pretty_path('/product.php?slug=' . urlencode($p['slug'])); $origin = site_origin();
 site_header($p['name'], 'shop', $pd, ['type' => 'product', 'image' => $p['image'], 'canonical' => $canonPath, 'jsonld' => array_filter([
     '@type' => 'Product', 'name' => $p['name'], 'description' => $pd, 'image' => $p['image'] ? [$origin . upload_url($p['image'])] : null,
     'brand' => $p['brand_name'] ? ['@type' => 'Brand', 'name' => $p['brand_name']] : null, 'category' => $p['category_name'] ?: null,

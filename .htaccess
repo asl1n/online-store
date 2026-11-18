@@ -3,4 +3,11 @@ Options -Indexes
 RewriteEngine On
 RewriteRule ^robots\.txt$ robots.php [L]
 RewriteRule ^sitemap\.xml$ sitemap.php [L]
+
+# Clean URLs: /shop, /blogs, /contact, /product/slug, /blog/slug
+RewriteRule ^shop/?$ shop.php [L,QSA]
+RewriteRule ^blogs/?$ blogs.php [L,QSA]
+RewriteRule ^contact/?$ contact.php [L,QSA]
+RewriteRule ^product/([A-Za-z0-9_-]+)/?$ product.php?slug=$1 [L,QSA]
+RewriteRule ^blog/([A-Za-z0-9_-]+)/?$ blog.php?slug=$1 [L,QSA]
 </IfModule>

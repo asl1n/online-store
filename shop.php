@@ -21,7 +21,7 @@ $allCats = fetch_all('SELECT name,slug FROM categories WHERE is_active=1 ORDER B
 $catName = $catSlug !== '' ? (string)fetch_val('SELECT name FROM categories WHERE slug=?', [$catSlug]) : '';
 $filtered = $brandSlug !== '' || $catSlug !== '' || $q !== '';
 
-$canonPath = ($catSlug !== '' && $brandSlug === '') ? '/shop.php?category=' . urlencode($catSlug) : (($brandSlug !== '' && $catSlug === '') ? '/shop.php?brand=' . urlencode($brandSlug) : '/shop.php');
+$canonPath = pretty_path(($catSlug !== '' && $brandSlug === '') ? '/shop.php?category=' . urlencode($catSlug) : (($brandSlug !== '' && $catSlug === '') ? '/shop.php?brand=' . urlencode($brandSlug) : '/shop.php'));
 $shopDesc = $catName ? 'Shop ' . $catName . ' at ' . site_name() . '. Compare prices and brands, then send us an enquiry.' : 'Browse all products at ' . site_name() . ': TVs, speakers, headphones, gaming and more.';
 site_header($catName ?: 'Shop', 'shop', $shopDesc, ['canonical' => $canonPath, 'noindex' => $q !== '']);
 render_banners('shop', true); ?>

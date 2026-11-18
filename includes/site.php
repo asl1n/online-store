@@ -5,7 +5,7 @@ require_once __DIR__ . '/contact.php';
 const PRODUCT_SELECT = 'SELECT p.*, b.name AS brand_name, b.slug AS brand_slug, c.name AS category_name, c.slug AS category_slug
   FROM products p LEFT JOIN brands b ON b.id=p.brand_id LEFT JOIN categories c ON c.id=p.category_id';
 
-function url(string $path): string { return BASE_URL . $path; }
+function url(string $path): string { return BASE_URL . pretty_path($path); }
 function money($v): string { return 'Rs. ' . number_format((float)$v); }
 
 /** Admin-entered links: allow /path or http(s):// only. Blocks javascript: and // tricks. */
@@ -110,7 +110,7 @@ function site_header(string $title, string $active = '', string $desc = '', arra
     $curCat = $active === 'shop' ? (string)($_GET['category'] ?? '') : '';
     $phones = setting('phones'); $addr = setting('address'); $email = setting('email');
     $d = seo_trim($desc ?: setting('meta_description')); $origin = site_origin();
-    $canon = isset($meta['canonical']) ? $origin . BASE_URL . $meta['canonical'] : $origin . strtok((string)($_SERVER['REQUEST_URI'] ?? '/'), '?');
+    $canon = isset($meta['canonical']) ? $origin . BASE_URL . pretty_path($meta['canonical']) : $origin . strtok((string)($_SERVER['REQUEST_URI'] ?? '/'), '?');
     $img = $meta['image'] ?? setting('header_logo'); $ogimg = $img ? $origin . upload_url($img) : '';
     $ogTitle = $title === 'Home' ? $name : $title;
     ?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">

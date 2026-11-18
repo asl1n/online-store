@@ -3,7 +3,7 @@ require __DIR__ . '/includes/site.php';
 $b = fetch_one('SELECT * FROM blogs WHERE is_published=1 AND slug=?', [(string)($_GET['slug'] ?? '')]);
 if (!$b) not_found();
 $desc = seo_trim($b['excerpt'] ?: $b['content']);
-$canonPath = '/blog.php?slug=' . urlencode($b['slug']); $origin = site_origin();
+$canonPath = pretty_path('/blog.php?slug=' . urlencode($b['slug'])); $origin = site_origin();
 site_header($b['title'], 'blog', $desc, ['type' => 'article', 'image' => $b['image'], 'canonical' => $canonPath, 'jsonld' => array_filter([
     '@type' => 'Article', 'headline' => $b['title'], 'description' => $desc,
     'image' => $b['image'] ? [$origin . upload_url($b['image'])] : null,

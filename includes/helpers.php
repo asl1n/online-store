@@ -2,6 +2,12 @@
 require_once __DIR__ . '/db.php';
 
 function e($v): string { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
+/** Clean public URLs: /shop.php -> /shop, /product.php?slug=x -> /product/x, /index.php -> / (see .htaccess). */
+function pretty_path(string $p): string {
+    if ($p === '/index.php') return '/';
+    if (preg_match('~^/(product|blog)\.php\?slug=([A-Za-z0-9_-]+)$~', $p, $m)) return '/' . $m[1] . '/' . $m[2];
+    return preg_replace('~^/(shop|blogs|contact)\.php(?=$|\?)~', '/$1', $p);
+}
 function redirect(string $path): never { header('Location: ' . BASE_URL . $path); exit; }
 
 // ---- CSRF ----
