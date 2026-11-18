@@ -1,0 +1,5 @@
+# Ignore all uploaded files inside uploads and its subfolders
+uploads/*
+
+# Keep the folder structure in Git using .gitkeep files
+!uploads/**/.gitkeep
