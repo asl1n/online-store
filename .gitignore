@@ -3,3 +3,4 @@ uploads/*
 
 # Keep the folder structure in Git using .gitkeep files
 !uploads/**/.gitkeep
+config/config.local.php

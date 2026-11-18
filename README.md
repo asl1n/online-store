@@ -25,3 +25,10 @@ Requirements: PHP 8.1+ (pdo_mysql, fileinfo) and MySQL/MariaDB. Easiest: XAMPP.
 - Contact form: CSRF token, honeypot, minimum-fill-time, per-IP rate limit, length/format validation, link-spam limit.
 - Behind a proxy/Cloudflare? Use the real client IP header instead of REMOTE_ADDR in rate limiting.
 - Set APP_DEBUG=false and use HTTPS before going live.
+
+## Local vs live config
+
+`config/config.php` holds the local (XAMPP) defaults. On the live server, copy
+`config/config.local.example.php` to `config/config.local.php`, fill in the real DB
+details, `BASE_URL => ''`, `SITE_URL` and `APP_DEBUG => false`. That file overrides the
+defaults and is blocked from the web by `config/.htaccess`. Never overwrite it when deploying.

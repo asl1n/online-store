@@ -1,15 +1,34 @@
 <?php
-// Edit these to match your setup
-const DB_HOST = '127.0.0.1';
-const DB_NAME = 'store_db';
-const DB_USER = 'root';
-const DB_PASS = '';
+// ---------------------------------------------------------------
+// Default settings = LOCAL (XAMPP). Works out of the box.
+// On the live server, create config/config.local.php (see
+// config.local.example.php). If that file exists it overrides the
+// defaults below. NEVER overwrite it when you re-upload the site.
+// ---------------------------------------------------------------
+$cfg = [
+    'DB_HOST'    => '127.0.0.1',
+    'DB_NAME'    => 'store_db',
+    'DB_USER'    => 'root',
+    'DB_PASS'    => '',
+    // Folder path of the site in the browser, no trailing slash. '' if at root.
+    'BASE_URL'   => '/store',
+    // Full domain for canonical links / sitemap, e.g. 'https://yourdomain.com'. '' = auto-detect.
+    'SITE_URL'   => '',
+    'APP_DEBUG'  => true,   // false in production
+];
 
-// Folder path of the site in the browser, no trailing slash. '' if at root.
-const BASE_URL = '/store';
+if (is_file(__DIR__ . '/config.local.php')) {
+    $cfg = array_merge($cfg, (array) require __DIR__ . '/config.local.php');
+}
 
-const UPLOAD_DIR = __DIR__ . '/../uploads/';
-const UPLOAD_URL = BASE_URL . '/uploads/';
-const MAX_UPLOAD_MB = 3;
+define('DB_HOST', $cfg['DB_HOST']);
+define('DB_NAME', $cfg['DB_NAME']);
+define('DB_USER', $cfg['DB_USER']);
+define('DB_PASS', $cfg['DB_PASS']);
+define('BASE_URL', rtrim($cfg['BASE_URL'], '/'));
+define('APP_DEBUG', (bool) $cfg['APP_DEBUG']);
+if ($cfg['SITE_URL'] !== '') define('SITE_URL', $cfg['SITE_URL']);
 
-const APP_DEBUG = true; // set false in production
+define('UPLOAD_DIR', __DIR__ . '/../uploads/');
+define('UPLOAD_URL', BASE_URL . '/uploads/');
+define('MAX_UPLOAD_MB', 3);
