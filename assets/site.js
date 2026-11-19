@@ -53,7 +53,7 @@ document.querySelectorAll("[data-slider]").forEach(function (el) {
     if (e.key === "Escape") set(false);
   });
   window.addEventListener("resize", function () {
-    if (window.innerWidth > 760) set(false);
+    if (window.innerWidth > 1100) set(false);
   });
 })();
 document.querySelectorAll("[data-autosubmit]").forEach(function (s) {
