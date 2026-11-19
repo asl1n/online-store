@@ -35,7 +35,6 @@ document.querySelectorAll("[data-slider]").forEach(function (el) {
   function set(open) {
     nav.classList.toggle("open", open);
     nb.setAttribute("aria-expanded", open ? "true" : "false");
-    nb.innerHTML = open ? "&#10005;" : "&#9776;";
   }
   nb.setAttribute("aria-expanded", "false");
   nb.addEventListener("click", function (e) {
@@ -116,3 +115,95 @@ document.querySelectorAll("[data-phone]").forEach(function (i) {
     if (c !== i.value) i.value = c;
   });
 });
+
+/* product gallery: thumbnails swap the main image; clicking the main image opens a full-screen viewer */
+(function () {
+  var g = document.querySelector("[data-gallery]");
+  if (!g) return;
+  var main = g.querySelector("[data-gallery-main]"),
+    openBtn = g.querySelector("[data-gallery-open]"),
+    thumbs = [].slice.call(g.querySelectorAll("[data-gallery-thumb]")),
+    srcs = thumbs.length
+      ? thumbs.map(function (t) {
+          return t.getAttribute("data-full");
+        })
+      : [main.getAttribute("src")],
+    cur = 0,
+    lb = null,
+    lastFocus = null,
+    startX = null;
+
+  function show(i) {
+    cur = (i + srcs.length) % srcs.length;
+    main.setAttribute("src", srcs[cur]);
+    thumbs.forEach(function (t, k) {
+      t.classList.toggle("active", k === cur);
+      if (k === cur && t.scrollIntoView)
+        t.scrollIntoView({ block: "nearest", inline: "nearest" });
+    });
+    if (lb) {
+      lb.querySelector(".lb-img").setAttribute("src", srcs[cur]);
+      lb.querySelector(".lb-count").textContent =
+        srcs.length > 1 ? cur + 1 + " / " + srcs.length : "";
+    }
+  }
+  thumbs.forEach(function (t, k) {
+    t.addEventListener("click", function () {
+      show(k);
+    });
+  });
+
+  function build() {
+    lb = document.createElement("div");
+    lb.className = "lb";
+    lb.setAttribute("role", "dialog");
+    lb.setAttribute("aria-modal", "true");
+    lb.setAttribute("aria-label", "Image viewer");
+    lb.innerHTML =
+      '<button type="button" class="lb-close" aria-label="Close">&#10005;</button>' +
+      (srcs.length > 1
+        ? '<button type="button" class="lb-nav lb-prev" aria-label="Previous image">&#8249;</button><button type="button" class="lb-nav lb-next" aria-label="Next image">&#8250;</button>'
+        : "") +
+      '<img class="lb-img" alt=""><div class="lb-count"></div>';
+    document.body.appendChild(lb);
+    lb.addEventListener("click", function (e) {
+      if (e.target === lb || e.target.classList.contains("lb-close")) close();
+      else if (e.target.classList.contains("lb-prev")) show(cur - 1);
+      else if (e.target.classList.contains("lb-next")) show(cur + 1);
+    });
+    lb.addEventListener(
+      "touchstart",
+      function (e) {
+        startX = e.touches[0].clientX;
+      },
+      { passive: true },
+    );
+    lb.addEventListener("touchend", function (e) {
+      if (startX === null || srcs.length < 2) return;
+      var dx = e.changedTouches[0].clientX - startX;
+      startX = null;
+      if (Math.abs(dx) > 50) show(cur + (dx < 0 ? 1 : -1));
+    });
+  }
+  function open() {
+    if (!lb) build();
+    lastFocus = document.activeElement;
+    lb.classList.add("open");
+    document.documentElement.classList.add("lb-lock");
+    show(cur);
+    lb.querySelector(".lb-close").focus();
+  }
+  function close() {
+    if (!lb) return;
+    lb.classList.remove("open");
+    document.documentElement.classList.remove("lb-lock");
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+  document.addEventListener("keydown", function (e) {
+    if (!lb || !lb.classList.contains("open")) return;
+    if (e.key === "Escape") close();
+    else if (e.key === "ArrowLeft") show(cur - 1);
+    else if (e.key === "ArrowRight") show(cur + 1);
+  });
+  if (openBtn) openBtn.addEventListener("click", open);
+})();

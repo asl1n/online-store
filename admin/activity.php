@@ -7,8 +7,8 @@ $total = (int)fetch_val("SELECT COUNT(*) FROM activity_logs $where", $p); $pages
 $rows = fetch_all("SELECT * FROM activity_logs $where ORDER BY id DESC LIMIT " . (int)$per . ' OFFSET ' . (int)(($page - 1) * $per), $p);
 admin_header('Activity Log', 'activity'); ?>
 <div class="toolbar"><span class="count"><?= $total ?> entr<?= $total === 1 ? 'y' : 'ies' ?></span>
-<form method="get"><select name="admin"><option value="">All admins</option>
-<?php foreach (fetch_all('SELECT id,name FROM admins ORDER BY name') as $a): ?><option value="<?= (int)$a['id'] ?>" <?= $who === (int)$a['id'] ? 'selected' : '' ?>><?= e($a['name']) ?></option><?php endforeach; ?></select><button class="btn ghost">Filter</button></form></div>
+<form method="get" data-autosubmit><select name="admin" aria-label="Filter by admin"><option value="">All admins</option>
+<?php foreach (fetch_all('SELECT id,name FROM admins ORDER BY name') as $a): ?><option value="<?= (int)$a['id'] ?>" <?= $who === (int)$a['id'] ? 'selected' : '' ?>><?= e($a['name']) ?></option><?php endforeach; ?></select><noscript><button class="btn ghost">Filter</button></noscript></form></div>
 <div class="card tablewrap"><table class="table"><thead><tr><th>When</th><th>Admin</th><th>Action</th><th>Item</th><th>Details</th><th>IP</th></tr></thead><tbody>
 <?php foreach ($rows as $l): ?><tr><td><?= e($l['created_at']) ?></td><td><?= e($l['admin_name']) ?></td><td><span class="pill"><?= e($l['action']) ?></span></td>
 <td><?= e($l['entity'] . ($l['entity_id'] ? ' #' . (int)$l['entity_id'] : '')) ?></td><td><?= e($l['details']) ?></td><td><?= e($l['ip_address']) ?></td></tr><?php endforeach;

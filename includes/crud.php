@@ -8,10 +8,27 @@ function crud_switch_labels(array $f): array {
 }
 function crud_is_half(array $f): bool {
     if (isset($f['half'])) return (bool)$f['half'];
-    if (!empty($f['full']) || in_array($f['type'], ['textarea', 'image', 'richtext'], true)) return false;
+    if (!empty($f['full']) || in_array($f['type'], ['textarea', 'image', 'richtext', 'gallery'], true)) return false;
     return ($f['max'] ?? 100) < 150;
 }
 function crud_options(array $f): array { $o = $f['options'] ?? []; return is_callable($o) ? $o() : $o; }
+
+/** Extra images attached to a row (e.g. product_images for a product). */
+function gallery_rows(array $f, int $id): array {
+    return $id ? fetch_all('SELECT id, image FROM `' . $f['table'] . '` WHERE `' . $f['fk'] . '`=? ORDER BY sort_order, id', [$id]) : [];
+}
+/** After the parent row is saved: delete ticked images, store newly uploaded ones. */
+function gallery_sync(array $c, int $id): void {
+    foreach ($c['fields'] as $f) {
+        if ($f['type'] !== 'gallery') continue;
+        $n = $f['name']; $drop = array_map('intval', (array)($_POST[$n . '_remove'] ?? []));
+        foreach (gallery_rows($f, $id) as $g) if (in_array((int)$g['id'], $drop, true)) { delete_upload($g['image']); db_delete($f['table'], (int)$g['id']); }
+        $next = (int)fetch_val('SELECT COALESCE(MAX(sort_order),0) FROM `' . $f['table'] . '` WHERE `' . $f['fk'] . '`=?', [$id]) + 1;
+        foreach (uploaded_files($n) as $file) {
+            try { db_insert($f['table'], [$f['fk'] => $id, 'image' => save_uploaded_image($file, 'gallery'), 'sort_order' => $next++]); } catch (Throwable $ex) { /* already validated */ }
+        }
+    }
+}
 
 function crud_values(array $c, ?array $row): array {
     $v = [];
@@ -33,6 +50,14 @@ function crud_collect(array $c, ?array $existing, int $id): array {
                     elseif (!empty($_POST['remove_' . $n]) && !$req) $data[$n] = null;
                     elseif ($req && empty($existing[$n])) $err[$n] = "$label is required. Please choose an image.";
                 } catch (Throwable $ex) { $err[$n] = $ex->getMessage(); }
+                break;
+            case 'gallery':
+                $new = uploaded_files($n); if (!$new) break;
+                $drop = array_map('intval', (array)($_POST[$n . '_remove'] ?? []));
+                $keep = count(array_filter(gallery_rows($f, $id), fn($g) => !in_array((int)$g['id'], $drop, true)));
+                $max = $f['max'] ?? 10;
+                if ($keep + count($new) > $max) { $err[$n] = "A product can have at most $max gallery images (you have $keep and tried to add " . count($new) . ')'; break; }
+                try { foreach ($new as $file) check_uploaded_image($file); } catch (Throwable $ex) { $err[$n] = $ex->getMessage(); }
                 break;
             case 'number':
                 $s = trim((string)($_POST[$n] ?? ''));
@@ -96,7 +121,10 @@ function crud_run(array $c): void {
         if (($_POST['_do'] ?? '') === 'delete') {
             $row = fetch_one("SELECT * FROM `$table` WHERE id=?", [(int)($_POST['id'] ?? 0)]);
             if ($row) {
-                foreach ($c['fields'] as $f) if ($f['type'] === 'image') delete_upload($row[$f['name']]);
+                foreach ($c['fields'] as $f) {
+                    if ($f['type'] === 'image') delete_upload($row[$f['name']]);
+                    if ($f['type'] === 'gallery') foreach (gallery_rows($f, (int)$row['id']) as $g) delete_upload($g['image']);
+                }
                 db_delete($table, (int)$row['id']);
                 log_activity('delete', $c['entity'], (int)$row['id'], (string)($row[$c['title_field']] ?? ''));
                 flash('ok', $c['entity'] . ' deleted.');
@@ -117,9 +145,11 @@ function crud_run(array $c): void {
                         $n = $f['name'];
                         if ($f['type'] === 'image' && array_key_exists($n, $data) && $existing[$n] && $data[$n] !== $existing[$n]) delete_upload($existing[$n]);
                     }
+                    gallery_sync($c, $id);
                     log_activity('update', $c['entity'], $id, $title); flash('ok', $c['entity'] . ' updated successfully.');
                 } else {
                     $nid = db_insert($table, $data + audit_create());
+                    gallery_sync($c, $nid);
                     log_activity('create', $c['entity'], $nid, $title); flash('ok', $c['entity'] . ' created successfully.');
                 }
                 go($self);
@@ -160,6 +190,16 @@ function crud_run(array $c): void {
                     $ctl = (!empty($row[$n]) ? '<img class="thumb" src="' . e(upload_url($row[$n])) . '" alt="">' : '')
                          . '<input type="file" id="' . e($n) . '" name="' . e($n) . '" accept="image/jpeg,image/png,image/webp,image/gif">'
                          . (!empty($row[$n]) && empty($f['required']) ? '<label class="chk"><input type="checkbox" name="remove_' . e($n) . '"> Remove current image</label>' : '');
+                    break;
+                case 'gallery':
+                    $ctl = '';
+                    $grows = gallery_rows($f, (int)$id);
+                    if ($grows) {
+                        $ctl .= '<div class="gallery-admin">';
+                        foreach ($grows as $g) $ctl .= '<label class="gitem"><img src="' . e(upload_url($g['image'])) . '" alt=""><span class="grm"><input type="checkbox" name="' . e($n) . '_remove[]" value="' . (int)$g['id'] . '"> Remove</span></label>';
+                        $ctl .= '</div>';
+                    }
+                    $ctl .= '<input type="file" id="' . e($n) . '" name="' . e($n) . '[]" accept="image/jpeg,image/png,image/webp,image/gif" multiple data-gallery-input><div class="gallery-admin previews" data-gallery-previews></div>';
                     break;
                 case 'number': $ctl = ui_input($n, $vals[$n], ['type' => 'number', 'step' => !empty($f['int']) ? '1' : '0.01', 'min' => $f['min'] ?? 0, 'max' => $f['maxv'] ?? false, 'inputmode' => 'decimal'] + $req); break;
                 default: $ctl = ui_input($n, $vals[$n], ['type' => 'text', 'maxlength' => $f['max'] ?? 255] + $req);

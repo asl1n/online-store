@@ -71,6 +71,7 @@ function ico(string $n): string {
         'back'  => '<path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/>',
         'left'  => '<path d="M15 6l-6 6 6 6"/>',
         'right' => '<path d="M9 6l6 6-6 6"/>',
+        'search' => '<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>',
     ];
     return '<svg class="ico" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' . ($p[$n] ?? '') . '</svg>';
 }
@@ -133,11 +134,11 @@ function site_header(string $title, string $active = '', string $desc = '', arra
 <meta property="og:description" content="<?= e($d) ?>"><meta property="og:url" content="<?= e($canon) ?>"><?php if ($ogimg): ?><meta property="og:image" content="<?= e($ogimg) ?>"><?php endif; ?>
 <meta name="twitter:card" content="<?= $ogimg ? 'summary_large_image' : 'summary' ?>"><meta name="twitter:title" content="<?= e($ogTitle) ?>"><meta name="twitter:description" content="<?= e($d) ?>">
 <?php if (!empty($meta['jsonld'])): ?><script type="application/ld+json"><?= json_encode(['@context' => 'https://schema.org'] + $meta['jsonld'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?></script><?php endif; ?>
-<link rel="stylesheet" href="<?= url('/assets/site.css') ?>"></head><body>
+<link rel="stylesheet" href="<?= asset('/assets/site.css') ?>"></head><body>
 <?php if ($phones || $addr || $email): ?><div class="strip"><div class="wrap">
   <span class="addr"><?php if ($addr): ?><?= ico('pin') ?><?= e($addr) ?><?php endif; ?></span>
   <div class="reach"><?php if ($phones): ?><span class="item"><?= ico('phone') ?><?= phone_links($phones) ?></span><?php endif; ?>
-  <?php if ($email): ?><span class="item"><?= ico('mail') ?><?= email_link($email) ?></span><?php endif; ?></div>
+  <?php if ($email): ?><span class="item mail"><?= ico('mail') ?><?= email_link($email) ?></span><?php endif; ?></div>
 </div></div><?php endif; ?>
 <header class="top"><div class="wrap bar">
   <a class="logo" href="<?= url('/index.php') ?>"><?= logo_html('header_logo') ?></a>
@@ -161,15 +162,15 @@ function site_footer(): void {
   <div class="fabout"><a class="logo" href="<?= url('/index.php') ?>"><?= logo_html('footer_logo') ?></a>
     <?php if (setting('footer_about')): ?><p><?= e(setting('footer_about')) ?></p><?php endif; ?>
     <?php if ($isurl($fb) || $isurl($ig)): ?><div class="social">
-      <?php if ($isurl($fb)): ?><a href="<?= e($fb) ?>" target="_blank" rel="noopener noreferrer">Facebook</a><?php endif; ?>
-      <?php if ($isurl($ig)): ?><a href="<?= e($ig) ?>" target="_blank" rel="noopener noreferrer">Instagram</a><?php endif; ?></div><?php endif; ?></div>
+      <?php if ($isurl($fb)): ?><a href="<?= e($fb) ?>" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg><span>Facebook</span></a><?php endif; ?>
+      <?php if ($isurl($ig)): ?><a href="<?= e($ig) ?>" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><path d="M17.5 6.5h.01"/></svg><span>Instagram</span></a><?php endif; ?></div><?php endif; ?></div>
   <div><h4>Explore</h4><a href="<?= url('/index.php') ?>">Home</a><a href="<?= url('/shop.php') ?>">Shop</a><a href="<?= url('/blogs.php') ?>">Blog</a><a href="<?= url('/contact.php') ?>">Contact</a></div>
-  <?php if ($cats): ?><div><h4>Shop by type</h4><?php foreach ($cats as $c): ?><a href="<?= e(url('/shop.php?category=' . urlencode($c['slug']))) ?>"><?= e($c['name']) ?></a><?php endforeach; ?></div><?php endif; ?>
+  <?php if ($cats): ?><div class="fcats"><h4>Shop by type</h4><?php foreach ($cats as $c): ?><a href="<?= e(url('/shop.php?category=' . urlencode($c['slug']))) ?>"><?= e($c['name']) ?></a><?php endforeach; ?></div><?php endif; ?>
   <?php if (setting('phones') || setting('address') || setting('email')): ?><div class="fvisit"><h4>Visit &amp; call</h4><ul class="ilist">
     <?php if (setting('address')): ?><li><?= ico('pin') ?><span><?= e(setting('address')) ?></span></li><?php endif; ?>
     <?php if (setting('phones')): ?><li><?= ico('phone') ?><span><?= phone_links(setting('phones')) ?></span></li><?php endif; ?>
     <?php if (setting('email')): ?><li><?= ico('mail') ?><span><?= email_link(setting('email')) ?></span></li><?php endif; ?></ul></div><?php endif; ?>
 </div><div class="copy"><div class="wrap copyrow<?= $pby === '' ? ' solo' : '' ?>"><span><?= e($copy) ?></span>
   <?php if ($pby !== ''): ?><span class="powered">Powered by <?= $isurl($pbu) ? '<a href="' . e($pbu) . '" target="_blank" rel="noopener noreferrer">' . e($pby) . '</a>' : e($pby) ?></span><?php endif; ?></div></div></footer>
-<script src="<?= url('/assets/site.js') ?>"></script></body></html>
+<script src="<?= asset('/assets/site.js') ?>"></script></body></html>
 <?php }

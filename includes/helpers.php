@@ -8,6 +8,8 @@ function pretty_path(string $p): string {
     if (preg_match('~^/(product|blog)\.php\?slug=([A-Za-z0-9_-]+)$~', $p, $m)) return '/' . $m[1] . '/' . $m[2];
     return preg_replace('~^/(shop|blogs|contact)\.php(?=$|\?)~', '/$1', $p);
 }
+/** Asset URL with ?v=<file modified time> so browsers never serve a stale CSS/JS file. */
+function asset(string $rel): string { $f = __DIR__ . '/..' . $rel; return BASE_URL . $rel . '?v=' . (is_file($f) ? filemtime($f) : 1); }
 function redirect(string $path): never { header('Location: ' . BASE_URL . $path); exit; }
 
 // ---- CSRF ----
@@ -40,19 +42,37 @@ function unique_slug(string $table, string $text, int $ignoreId = 0): string {
 }
 
 // ---- Image upload: returns stored path, null if no file, throws on error ----
-function upload_image(string $field, string $subdir): ?string {
-    if (empty($_FILES[$field]) || $_FILES[$field]['error'] === UPLOAD_ERR_NO_FILE) return null;
-    $f = $_FILES[$field];
+/** Normalise $_FILES[$field] (single or multiple) into a list of single-file arrays, skipping empty slots. */
+function uploaded_files(string $field): array {
+    if (empty($_FILES[$field])) return [];
+    $f = $_FILES[$field]; $out = [];
+    if (!is_array($f['name'])) return $f['error'] === UPLOAD_ERR_NO_FILE ? [] : [$f];
+    foreach ($f['name'] as $i => $_) {
+        if ($f['error'][$i] === UPLOAD_ERR_NO_FILE) continue;
+        $out[] = ['name' => $f['name'][$i], 'tmp_name' => $f['tmp_name'][$i], 'error' => $f['error'][$i], 'size' => $f['size'][$i]];
+    }
+    return $out;
+}
+/** Validates one uploaded file; returns its extension or throws. */
+function check_uploaded_image(array $f): string {
     if ($f['error'] !== UPLOAD_ERR_OK) throw new RuntimeException('Upload failed.');
     if ($f['size'] > MAX_UPLOAD_MB * 1024 * 1024) throw new RuntimeException('Image too large (max ' . MAX_UPLOAD_MB . 'MB).');
     $mime = (new finfo(FILEINFO_MIME_TYPE))->file($f['tmp_name']);
     $ext = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/gif' => 'gif', 'image/x-icon' => 'ico', 'image/vnd.microsoft.icon' => 'ico'][$mime] ?? null;
     if (!$ext) throw new RuntimeException('Only JPG, PNG, WEBP, GIF or ICO images are allowed.');
+    return $ext;
+}
+function save_uploaded_image(array $f, string $subdir): string {
+    $ext = check_uploaded_image($f);
     $dir = UPLOAD_DIR . $subdir . '/';
     if (!is_dir($dir)) mkdir($dir, 0755, true);
     $name = bin2hex(random_bytes(10)) . '.' . $ext;
     if (!move_uploaded_file($f['tmp_name'], $dir . $name)) throw new RuntimeException('Could not save image.');
     return $subdir . '/' . $name;
+}
+function upload_image(string $field, string $subdir): ?string {
+    $list = uploaded_files($field);
+    return $list ? save_uploaded_image($list[0], $subdir) : null;
 }
 function delete_upload(?string $rel): void {
     if ($rel && !str_contains($rel, '..') && is_file(UPLOAD_DIR . $rel)) @unlink(UPLOAD_DIR . $rel);
