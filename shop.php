@@ -2,7 +2,7 @@
 require __DIR__ . '/includes/site.php';
 $brandSlug = trim((string)($_GET['brand'] ?? '')); $catSlug = trim((string)($_GET['category'] ?? ''));
 $q = trim((string)($_GET['q'] ?? '')); $sort = (string)($_GET['sort'] ?? 'new');
-$orders = ['new' => 'p.id DESC', 'low' => 'p.price ASC', 'high' => 'p.price DESC', 'name' => 'p.name ASC'];
+$orders = ['new' => 'p.id DESC', 'low' => '(p.price*(1-p.discount_percent/100)) ASC', 'high' => '(p.price*(1-p.discount_percent/100)) DESC', 'name' => 'p.name ASC'];
 $order = $orders[$sort] ?? $orders['new'];
 
 $where = ['p.is_active=1']; $params = [];

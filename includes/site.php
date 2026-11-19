@@ -7,6 +7,17 @@ const PRODUCT_SELECT = 'SELECT p.*, b.name AS brand_name, b.slug AS brand_slug, 
 
 function url(string $path): string { return BASE_URL . pretty_path($path); }
 function money($v): string { return 'Rs. ' . number_format((float)$v); }
+/** Discount % on a product row (0 when none / column missing). */
+function discount_pct(array $p): float { $d = (float)($p['discount_percent'] ?? 0); return ($d > 0 && $d < 100) ? $d : 0.0; }
+/** Price the customer actually pays, rounded to a whole rupee. */
+function final_price(array $p): float { $d = discount_pct($p); return $d > 0 ? round((float)$p['price'] * (1 - $d / 100)) : (float)$p['price']; }
+function pct_label(float $d): string { return rtrim(rtrim(number_format($d, 2), '0'), '.') . '%'; }
+/** Price block: crossed-out old price + new price when discounted. $big = product page version. */
+function price_html(array $p, bool $big = false): string {
+    $d = discount_pct($p);
+    if ($d <= 0) return '<b class="price' . ($big ? ' xl' : '') . '">' . e(money($p['price'])) . '</b>';
+    return '<span class="pricebox' . ($big ? ' big' : '') . '"><s class="was">' . e(money($p['price'])) . '</s><b class="price now' . ($big ? ' xl' : '') . '">' . e(money(final_price($p))) . '</b></span>';
+}
 
 /** Admin-entered links: allow /path or http(s):// only. Blocks javascript: and // tricks. */
 function safe_link(?string $l): string {
@@ -77,9 +88,10 @@ function email_link(string $m): string { return '<a href="mailto:' . e($m) . '">
 function product_card(array $p): string {
     $img = $p['image'] ? '<img src="' . e(upload_url($p['image'])) . '" alt="' . e($p['name']) . '" loading="lazy">' : '<div class="noimg">No image</div>';
     return '<a class="pcard" href="' . e(url('/product.php?slug=' . urlencode($p['slug']))) . '"><div class="pimg">' . $img
-        . (!empty($p['brand_name']) ? '<span class="tag">' . e($p['brand_name']) . '</span>' : '') . '</div>'
+        . (!empty($p['brand_name']) ? '<span class="tag">' . e($p['brand_name']) . '</span>' : '')
+        . (discount_pct($p) > 0 ? '<span class="off">-' . e(pct_label(discount_pct($p))) . '</span>' : '') . '</div>'
         . '<div class="pbody"><small>' . e($p['category_name'] ?? '') . '</small><h3>' . e($p['name']) . '</h3>'
-        . '<div class="prow"><b class="price">' . e(money($p['price'])) . '</b><span class="go">&rarr;</span></div></div></a>';
+        . '<div class="prow">' . price_html($p) . '<span class="go">&rarr;</span></div></div></a>';
 }
 function blog_card(array $b): string {
     return '<a class="pcard blog" href="' . e(url('/blog.php?slug=' . urlencode($b['slug']))) . '">'
@@ -153,7 +165,7 @@ function site_footer(): void {
       <?php if ($isurl($ig)): ?><a href="<?= e($ig) ?>" target="_blank" rel="noopener noreferrer">Instagram</a><?php endif; ?></div><?php endif; ?></div>
   <div><h4>Explore</h4><a href="<?= url('/index.php') ?>">Home</a><a href="<?= url('/shop.php') ?>">Shop</a><a href="<?= url('/blogs.php') ?>">Blog</a><a href="<?= url('/contact.php') ?>">Contact</a></div>
   <?php if ($cats): ?><div><h4>Shop by type</h4><?php foreach ($cats as $c): ?><a href="<?= e(url('/shop.php?category=' . urlencode($c['slug']))) ?>"><?= e($c['name']) ?></a><?php endforeach; ?></div><?php endif; ?>
-  <?php if (setting('phones') || setting('address') || setting('email')): ?><div><h4>Visit &amp; call</h4><ul class="ilist">
+  <?php if (setting('phones') || setting('address') || setting('email')): ?><div class="fvisit"><h4>Visit &amp; call</h4><ul class="ilist">
     <?php if (setting('address')): ?><li><?= ico('pin') ?><span><?= e(setting('address')) ?></span></li><?php endif; ?>
     <?php if (setting('phones')): ?><li><?= ico('phone') ?><span><?= phone_links(setting('phones')) ?></span></li><?php endif; ?>
     <?php if (setting('email')): ?><li><?= ico('mail') ?><span><?= email_link(setting('email')) ?></span></li><?php endif; ?></ul></div><?php endif; ?>
