@@ -1653,3 +1653,396 @@ select {
   color: #9b97b8;
   opacity: 1;
 }
+
+/* round 9: discounts, rails, long-text safety, phone layout fixes */
+
+/* --- why phones looked cramped: .wrap's padding shorthand was wiping the
+       top/bottom padding of .section, .bar and .cols. Re-assert them. --- */
+.wrap.section {
+  padding: 34px 22px;
+}
+.top .bar {
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+footer .cols {
+  padding-top: 48px;
+  padding-bottom: 34px;
+}
+.top {
+  background: rgba(251, 250, 255, 0.97);
+}
+
+/* --- grids / detail columns must be allowed to shrink (stops inputs, tables
+       and long words from pushing the page wider than the screen) --- */
+.detail {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+.detail > *,
+.pcard,
+.pbody,
+.sechead > div {
+  min-width: 0;
+}
+h1,
+h2,
+h3,
+h4,
+.pbody small,
+.crumbs [aria-current],
+.msg-subject {
+  overflow-wrap: anywhere;
+}
+.prose {
+  overflow-wrap: break-word;
+}
+.prose table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.prose td,
+.prose th {
+  min-width: 96px;
+}
+.prose pre {
+  overflow-x: auto;
+}
+
+/* --- discount UI --- */
+.pbody h3 {
+  min-height: 0;
+  height: 2.7em;
+}
+.prow {
+  margin-top: auto;
+  padding-top: 10px;
+  align-items: flex-end;
+  gap: 8px;
+}
+.price {
+  white-space: nowrap;
+}
+.pricebox {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.15;
+  min-width: 0;
+}
+.was {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+  text-decoration-thickness: 1.5px;
+  text-decoration-color: #e0476a;
+  white-space: nowrap;
+}
+.off {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 1;
+  background: var(--acc);
+  color: #fff;
+  border-radius: 99px;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  box-shadow: 0 4px 12px rgba(255, 107, 74, 0.35);
+}
+.pdp-price {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  margin: 8px 0 16px;
+}
+.pdp-price .price.xl {
+  margin: 0;
+}
+.pricebox.big {
+  flex-direction: row-reverse;
+  justify-content: flex-end;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+.pricebox.big .was {
+  font-size: 20px;
+}
+.save {
+  background: #dcf5e6;
+  color: #0f5b38;
+  font-size: 13.5px;
+  font-weight: 700;
+  border-radius: 99px;
+  padding: 4px 12px;
+}
+
+/* --- rails (featured, new arrivals, blog) --- */
+.rail .pcard {
+  min-width: 0;
+}
+.rail .pcard.blog {
+  flex-basis: 340px;
+}
+.blograil .pcard.blog .pbody h3 {
+  height: 2.7em;
+}
+
+/* --- blog cards: never grow with long text --- */
+.pcard.blog .pbody h3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.pcard.blog .pbody p {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+/* --- shop filters: same size everywhere --- */
+.filterbar select {
+  width: 190px;
+  height: 42px;
+}
+
+/* --- contact form finishing --- */
+.cform {
+  min-width: 0;
+}
+.cform label input,
+.cform label textarea {
+  padding: 12px 16px;
+  font-size: 16px;
+  line-height: 1.4;
+}
+.cform .btn {
+  min-width: 170px;
+}
+
+/* tablet */
+@media (max-width: 1000px) {
+  .detail {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .grid.g3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  footer .cols {
+    grid-template-columns: 1fr 1fr;
+    gap: 28px 24px;
+  }
+  .cols > .fabout,
+  .cols > .fvisit {
+    grid-column: 1 / -1;
+  }
+}
+
+/* phone */
+@media (max-width: 760px) {
+  .wrap.section {
+    padding: 26px 16px;
+  }
+  /* menu opens as a floating panel; tapping outside closes it (site.js) */
+  .top .bar {
+    position: relative;
+    gap: 10px 12px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+  #mainnav {
+    display: none;
+    position: absolute;
+    top: calc(100% - 2px);
+    left: 16px;
+    right: 16px;
+    width: auto;
+    z-index: 50;
+    margin: 0;
+    padding: 8px;
+    flex-direction: column;
+    gap: 2px;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    box-shadow: 0 22px 48px rgba(21, 18, 46, 0.22);
+    max-height: calc(100vh - 150px);
+    max-height: calc(100dvh - 150px);
+    overflow-y: auto;
+  }
+  #mainnav.open {
+    display: flex;
+  }
+  #mainnav a,
+  .navdrop > button {
+    padding: 12px 14px;
+  }
+  .burger {
+    line-height: 1;
+    padding: 4px 6px;
+  }
+
+  /* top contact strip */
+  .strip .wrap {
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
+  .strip .reach {
+    gap: 2px 16px;
+  }
+  .strip .item {
+    white-space: nowrap;
+  }
+
+  /* footer: two link columns, about + visit full width */
+  footer {
+    border-radius: 28px 28px 0 0;
+    margin-top: 36px;
+  }
+  footer .cols {
+    grid-template-columns: 1fr 1fr;
+    gap: 26px 20px;
+    padding-top: 38px;
+    padding-bottom: 26px;
+  }
+  footer .logo-img img {
+    height: 46px;
+  }
+  footer a,
+  footer h4 {
+    overflow-wrap: anywhere;
+  }
+
+  /* shop filters */
+  .filterbar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .filterbar select {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    text-overflow: ellipsis;
+  }
+  .filterbar select[name="sort"],
+  .filterbar .clearlink {
+    grid-column: 1 / -1;
+  }
+  .filterbar .clearlink {
+    justify-self: start;
+  }
+
+  /* cards */
+  .grid {
+    gap: 12px;
+  }
+  .pimg {
+    --pad: 16px;
+  }
+  .pbody {
+    padding: 12px 14px 14px;
+  }
+  .pbody h3 {
+    font-size: 15px;
+  }
+  .price {
+    font-size: 17px;
+  }
+  .was {
+    font-size: 12px;
+  }
+  .go {
+    width: 30px;
+    height: 30px;
+    flex: 0 0 auto;
+  }
+  .tag {
+    top: 8px;
+    left: 8px;
+    max-width: calc(100% - 62px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 11.5px;
+  }
+  .off {
+    top: 8px;
+    right: 8px;
+    font-size: 11px;
+    padding: 2px 8px;
+  }
+  .rail .pcard {
+    flex-basis: 220px;
+  }
+  .rail .pcard.blog {
+    flex: 0 0 86%;
+    max-width: 380px;
+  }
+
+  /* product page */
+  .pricebox.big .was {
+    font-size: 17px;
+  }
+  .price.xl {
+    font-size: 28px;
+  }
+  .related {
+    margin-top: 40px;
+  }
+
+  /* contact */
+  .cform,
+  .infobox {
+    padding: 20px 18px;
+    border-radius: 22px;
+  }
+  .cform .btn {
+    width: 100%;
+  }
+  .detail {
+    gap: 22px;
+  }
+  .search .btn.sm {
+    padding: 10px 18px;
+  }
+}
+
+/* blog list: one card per row on phones */
+@media (max-width: 640px) {
+  .grid.g3 {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+/* small phones: one product per row so nothing gets squeezed */
+@media (max-width: 399px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  .grid .pimg {
+    aspect-ratio: 4/3;
+  }
+  .filterbar {
+    grid-template-columns: 1fr;
+  }
+  .rail .pcard {
+    flex-basis: 78%;
+  }
+  .search .btn.sm {
+    padding: 10px 14px;
+  }
+  .search {
+    padding-left: 12px;
+  }
+}

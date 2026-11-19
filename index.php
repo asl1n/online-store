@@ -13,17 +13,17 @@ $feat = fetch_all(PRODUCT_SELECT . ' WHERE p.is_active=1 AND p.is_featured=1 ORD
 if ($feat): ?><section class="wrap section"><div class="sechead"><div><span class="eyebrow">Hand-picked</span><h2 class="sec">Featured</h2></div><a class="more" href="<?= url('/shop.php') ?>">See everything &rarr;</a></div>
 <div class="railwrap" data-rail><button type="button" class="railbtn" data-rail-prev aria-label="Previous products"><?= ico('left') ?></button><div class="rail" data-rail-track><?php foreach ($feat as $p) echo product_card($p); ?></div><button type="button" class="railbtn" data-rail-next aria-label="Next products"><?= ico('right') ?></button></div></section><?php endif;
 
-$new = fetch_all(PRODUCT_SELECT . ' WHERE p.is_active=1 ORDER BY p.id DESC LIMIT 4');
+$new = fetch_all(PRODUCT_SELECT . ' WHERE p.is_active=1 ORDER BY p.id DESC LIMIT 8');
 if ($new): ?><section class="wrap section"><div class="sechead"><div><span class="eyebrow">Just landed</span><h2 class="sec">New arrivals</h2></div><a class="more" href="<?= url('/shop.php') ?>">Shop all &rarr;</a></div>
-<div class="grid row1"><?php foreach ($new as $p) echo product_card($p); ?></div></section><?php endif;
+<div class="railwrap" data-rail><button type="button" class="railbtn" data-rail-prev aria-label="Previous products"><?= ico('left') ?></button><div class="rail" data-rail-track><?php foreach ($new as $p) echo product_card($p); ?></div><button type="button" class="railbtn" data-rail-next aria-label="Next products"><?= ico('right') ?></button></div></section><?php endif;
 
 $brands = fetch_all('SELECT name,slug,logo FROM brands WHERE is_active=1 AND logo IS NOT NULL ORDER BY sort_order, name');
 if ($brands): ?><section class="wrap section"><div class="sechead"><div><span class="eyebrow">Trusted names</span><h2 class="sec">Brands we carry</h2></div></div><div class="brands">
 <?php foreach ($brands as $b): ?><a href="<?= e(url('/shop.php?brand=' . urlencode($b['slug']))) ?>" title="<?= e($b['name']) ?>"><img src="<?= e(upload_url($b['logo'])) ?>" alt="<?= e($b['name']) ?>" loading="lazy"></a><?php endforeach; ?></div></section><?php endif;
 
-$posts = fetch_all('SELECT title,slug,excerpt,image,published_at FROM blogs WHERE is_published=1 ORDER BY published_at DESC, id DESC LIMIT 3');
+$posts = fetch_all('SELECT title,slug,excerpt,image,published_at FROM blogs WHERE is_published=1 ORDER BY published_at DESC, id DESC LIMIT 6');
 if ($posts): ?><section class="wrap section"><div class="sechead"><div><span class="eyebrow">Read</span><h2 class="sec">From the blog</h2></div><a class="more" href="<?= url('/blogs.php') ?>">All posts &rarr;</a></div>
-<div class="grid g3"><?php foreach ($posts as $b) echo blog_card($b); ?></div></section><?php endif; ?>
+<div class="railwrap" data-rail><button type="button" class="railbtn" data-rail-prev aria-label="Previous posts"><?= ico('left') ?></button><div class="rail blograil" data-rail-track><?php foreach ($posts as $b) echo blog_card($b); ?></div><button type="button" class="railbtn" data-rail-next aria-label="Next posts"><?= ico('right') ?></button></div></section><?php endif; ?>
 
 <section class="wrap section"><div class="cta"><div><h2>Not sure what to pick?</h2><p>Tell us what you need and we will help you choose the right one.</p></div><a class="btn" href="<?= url('/contact.php') ?>">Talk to us</a></div></section>
 <?php site_footer();

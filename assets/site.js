@@ -27,11 +27,36 @@ document.querySelectorAll("[data-slider]").forEach(function (el) {
   });
   auto();
 });
-var nb = document.querySelector("[data-nav-toggle]");
-if (nb)
-  nb.addEventListener("click", function () {
-    document.getElementById("mainnav").classList.toggle("open");
+/* phone menu: burger toggles it; tapping anywhere outside (or Esc) closes it */
+(function () {
+  var nb = document.querySelector("[data-nav-toggle]"),
+    nav = document.getElementById("mainnav");
+  if (!nb || !nav) return;
+  function set(open) {
+    nav.classList.toggle("open", open);
+    nb.setAttribute("aria-expanded", open ? "true" : "false");
+    nb.innerHTML = open ? "&#10005;" : "&#9776;";
+  }
+  nb.setAttribute("aria-expanded", "false");
+  nb.addEventListener("click", function (e) {
+    e.stopPropagation();
+    set(!nav.classList.contains("open"));
   });
+  document.addEventListener("click", function (e) {
+    if (
+      nav.classList.contains("open") &&
+      !nav.contains(e.target) &&
+      !nb.contains(e.target)
+    )
+      set(false);
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") set(false);
+  });
+  window.addEventListener("resize", function () {
+    if (window.innerWidth > 760) set(false);
+  });
+})();
 document.querySelectorAll("[data-autosubmit]").forEach(function (s) {
   s.addEventListener("change", function () {
     s.form.submit();
@@ -80,6 +105,7 @@ document.querySelectorAll("[data-rail]").forEach(function (w) {
     else t.scrollBy({ left: -t.clientWidth * 0.9, behavior: "smooth" });
   });
   window.addEventListener("resize", check);
+  window.addEventListener("load", check);
   check();
 });
 

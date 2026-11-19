@@ -61,6 +61,7 @@ function admin_header(string $title, string $active = '', string $actions = ''):
   <button class="icon-btn menu" type="button" data-side-toggle aria-label="Open menu">&#9776;</button>
   <div class="crumbs">Admin <span>/</span> <b><?= e($title) ?></b></div>
   <div class="top-right">
+    <a class="icon-link<?= $unread ? ' has-new' : '' ?>" href="<?= BASE_URL ?>/admin/messages.php" aria-label="<?= $unread ? (int)$unread . ' unread messages' : 'Messages' ?>" title="<?= $unread ? (int)$unread . ' unread' : 'Messages' ?>"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg><?php if ($unread): ?><span class="dot"><?= $unread > 99 ? '99+' : (int)$unread ?></span><?php endif; ?></a>
     <a class="btn ghost sm hide-xs" href="<?= BASE_URL ?>/index.php" target="_blank" rel="noopener">View site &#8599;</a>
     <div class="user" data-dropdown>
       <button class="user-btn" type="button" aria-haspopup="true" aria-expanded="false">

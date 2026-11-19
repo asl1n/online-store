@@ -161,9 +161,10 @@ function crud_run(array $c): void {
                          . '<input type="file" id="' . e($n) . '" name="' . e($n) . '" accept="image/jpeg,image/png,image/webp,image/gif">'
                          . (!empty($row[$n]) && empty($f['required']) ? '<label class="chk"><input type="checkbox" name="remove_' . e($n) . '"> Remove current image</label>' : '');
                     break;
-                case 'number': $ctl = ui_input($n, $vals[$n], ['type' => 'number', 'step' => !empty($f['int']) ? '1' : '0.01', 'min' => $f['min'] ?? 0, 'inputmode' => 'decimal'] + $req); break;
+                case 'number': $ctl = ui_input($n, $vals[$n], ['type' => 'number', 'step' => !empty($f['int']) ? '1' : '0.01', 'min' => $f['min'] ?? 0, 'max' => $f['maxv'] ?? false, 'inputmode' => 'decimal'] + $req); break;
                 default: $ctl = ui_input($n, $vals[$n], ['type' => 'text', 'maxlength' => $f['max'] ?? 255] + $req);
             }
+            if (!empty($f['preview'])) $ctl .= '<div class="pricepreview" data-price-preview aria-live="polite"></div>';
             echo ui_field($f['label'], $ctl, $o);
         endforeach; ?></div>
         <div class="form-actions"><button class="btn"><?= $act === 'edit' ? 'Save changes' : 'Create ' . e(strtolower($c['entity'])) ?></button><a class="btn ghost" href="<?= e($self) ?>">Cancel</a></div></form>
@@ -192,6 +193,7 @@ function crud_run(array $c): void {
         <?php if ($t === 'image'): ?><?= $v ? '<img class="thumb sm" src="' . e(upload_url($v)) . '" alt="">' : '<span class="count">—</span>' ?>
         <?php elseif ($t === 'bool'): [$on, $off] = crud_switch_labels(['name' => $col['name']]); ?><form method="post" class="inline-toggle"><?= csrf_field() ?><input type="hidden" name="_do" value="toggle"><input type="hidden" name="id" value="<?= (int)$r['id'] ?>"><input type="hidden" name="field" value="<?= e($col['name']) ?>"><input type="hidden" name="ret" value="<?= e((string)($_SERVER['QUERY_STRING'] ?? '')) ?>"><button class="switch-btn <?= $v ? 'on' : '' ?>" title="<?= e($v ? $on : $off) ?> – click to change" aria-label="<?= e($v ? $on : $off) ?>"><span class="knob"></span></button><span class="swtxt <?= $v ? 'on' : '' ?>"><?= e($v ? $on : $off) ?></span></form>
         <?php elseif ($t === 'money'): ?>Rs. <?= e(number_format((float)$v)) ?>
+        <?php elseif ($t === 'percent'): ?><?= (float)$v > 0 ? '<span class="pill off">' . e(rtrim(rtrim(number_format((float)$v, 2), '0'), '.')) . '% off</span>' : '<span class="count">—</span>' ?>
         <?php else: ?><?= $v === '' || $v === null ? '<span class="count">—</span>' : e($v) ?><?php endif; ?></td><?php endforeach; ?>
       <td class="audit"><small>Added by <b><?= e($r['created_name'] ?? 'unknown') ?></b> · <?= e(substr((string)$r['created_at'], 0, 10)) ?></small>
         <small>Edited by <b><?= e($r['updated_name'] ?? 'unknown') ?></b> · <?= e(substr((string)$r['updated_at'], 0, 10)) ?></small></td>

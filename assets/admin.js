@@ -2,15 +2,18 @@
   var $ = function (s, r) { return (r || document).querySelector(s); };
   var $$ = function (s, r) { return [].slice.call((r || document).querySelectorAll(s)); };
 
-  // Responsive tables: copy header text into each cell as a label
-  $$('table.table').forEach(function (t) {
-    var heads = $$('thead th', t).map(function (h) { return h.textContent.trim(); });
-    $$('tbody tr', t).forEach(function (tr) {
-      $$(':scope > td', tr).forEach(function (td, i) {
-        if (td.colSpan > 1 || td.hasAttribute('data-label')) return;
-        if (heads[i]) td.setAttribute('data-label', heads[i]);
-      });
-    });
+  // Live "customers pay" preview under the discount field
+  $$('[data-price-preview]').forEach(function (box) {
+    var price = $('#price'), disc = $('#discount_percent');
+    if (!price || !disc) return;
+    function fmt(n) { return 'Rs. ' + Math.round(n).toLocaleString('en-US'); }
+    function upd() {
+      var p = parseFloat(price.value), d = parseFloat(disc.value);
+      if (!(p > 0) || !(d > 0) || d >= 100) { box.textContent = ''; box.classList.remove('on'); return; }
+      box.innerHTML = 'Customers will see <s>' + fmt(p) + '</s> <b>' + fmt(p * (1 - d / 100)) + '</b>';
+      box.classList.add('on');
+    }
+    price.addEventListener('input', upd); disc.addEventListener('input', upd); upd();
   });
 
   // Sidebar (mobile)
