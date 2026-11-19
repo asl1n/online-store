@@ -13,6 +13,11 @@ function db(): PDO {
                 PDO::ATTR_EMULATE_PREPARES => false,
             ]
         );
+        // Upgrade path: older databases get the discount column automatically (see database/migrations/001_add_discount.sql).
+        try {
+            if ($pdo->query("SHOW TABLES LIKE 'products'")->fetch() && !$pdo->query("SHOW COLUMNS FROM products LIKE 'discount_percent'")->fetch())
+                $pdo->exec('ALTER TABLE products ADD COLUMN discount_percent DECIMAL(5,2) NOT NULL DEFAULT 0 AFTER price');
+        } catch (Throwable $e) { /* no ALTER permission: run the migration SQL by hand */ }
     }
     return $pdo;
 }
