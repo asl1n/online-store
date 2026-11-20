@@ -104,12 +104,20 @@ small {
   color: #fff;
 }
 .badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  box-sizing: border-box;
+  padding: 0 7px;
   background: #ef4444;
   color: #fff;
   font-size: 11px;
+  line-height: 1;
   border-radius: 99px;
-  padding: 1px 8px;
-  font-weight: 600;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 .scrim {
   display: none;
@@ -1038,21 +1046,40 @@ label.switch {
   background: var(--bg);
 }
 .icon-link .dot {
+  /* round count badge pinned to the bell's top-right corner; grows to the LEFT for 2-3 characters */
   position: absolute;
-  top: -5px;
-  right: -5px;
-  min-width: 19px;
-  height: 19px;
+  top: -6px;
+  right: -7px;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
   padding: 0 5px;
-  border-radius: 99px;
+  border-radius: 10px;
   background: #ef4444;
   color: #fff;
   font-size: 11px;
   font-weight: 700;
-  line-height: 19px;
-  text-align: center;
+  line-height: 1;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
   border: 2px solid #fff;
-  box-sizing: content-box;
+  box-shadow: 0 1px 2px rgba(17, 12, 60, 0.18);
+  pointer-events: none;
+}
+.icon-link .dot.two {
+  top: -8px;
+  right: -8px;
+  padding: 0 6px;
+}
+.icon-link .dot.wide {
+  top: -8px;
+  right: -9px;
+  padding: 0 6px;
+  font-size: 10.5px;
+  letter-spacing: -0.2px;
 }
 /* message view */
 .msg {

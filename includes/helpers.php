@@ -212,11 +212,20 @@ function render_content(?string $s): string {
 }
 
 // ---- Security headers ----
+/** Sends the Content-Security-Policy. $captcha = true additionally allows Google reCAPTCHA (contact page only). */
+function send_csp(bool $captcha = false): void {
+    if (headers_sent()) return;
+    $g = $captcha ? ' https://www.google.com https://www.gstatic.com' : '';
+    header("Content-Security-Policy: default-src 'self'; img-src 'self' data: blob:" . ($captcha ? ' https://www.gstatic.com' : '')
+        . "; style-src 'self' 'unsafe-inline'" . ($captcha ? ' https://www.gstatic.com' : '') . "; script-src 'self'" . $g
+        . ($captcha ? '; frame-src https://www.google.com https://recaptcha.google.com' : '')
+        . "; frame-ancestors 'none'; form-action 'self'; base-uri 'self'");
+}
 function send_security_headers(): void {
     if (headers_sent()) return;
     header('X-Content-Type-Options: nosniff');
     header('X-Frame-Options: DENY');
     header('Referrer-Policy: strict-origin-when-cross-origin');
-    header("Content-Security-Policy: default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; frame-ancestors 'none'; form-action 'self'; base-uri 'self'");
+    send_csp();
 }
 send_security_headers();

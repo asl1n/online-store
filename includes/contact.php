@@ -14,6 +14,39 @@ function contact_honeypot_field(): string {
          . '<label>Leave empty<input type="text" name="hp_extra_field" tabindex="-1" autocomplete="off"></label></div>';
 }
 
+// ---- Google reCAPTCHA v2 ("I'm not a robot" checkbox) ----
+// Keys live in Admin -> Settings -> Google reCAPTCHA. Captcha is only active when BOTH keys are saved.
+function captcha_site_key(): string { return setting('recaptcha_site_key'); }
+function captcha_enabled(): bool { return captcha_site_key() !== '' && setting('recaptcha_secret_key') !== ''; }
+/** Widget markup (put inside the <form>) + the Google script. Empty string when captcha is not configured. */
+function captcha_widget(): string {
+    if (!captcha_enabled()) return '';
+    return '<div class="captcha"><div class="g-recaptcha" data-sitekey="' . e(captcha_site_key()) . '"></div></div>'
+         . '<script src="https://www.google.com/recaptcha/api.js" async defer></script>';
+}
+/** Asks Google whether the token is valid. @return string|null null = OK, otherwise the error to show. */
+function captcha_verify(string $token): ?string {
+    if (!captcha_enabled()) return null;
+    if ($token === '' || strlen($token) > 4096) return 'Please tick “I’m not a robot”.';
+    $body = http_build_query(['secret' => setting('recaptcha_secret_key'), 'response' => $token, 'remoteip' => $_SERVER['REMOTE_ADDR'] ?? '']);
+    $raw = false;
+    if (function_exists('curl_init')) {
+        $ch = curl_init('https://www.google.com/recaptcha/api/siteverify');
+        curl_setopt_array($ch, [CURLOPT_POST => true, CURLOPT_POSTFIELDS => $body, CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 8, CURLOPT_CONNECTTIMEOUT => 5]);
+        $raw = curl_exec($ch); curl_close($ch);
+    } else {
+        $raw = @file_get_contents('https://www.google.com/recaptcha/api/siteverify', false, stream_context_create(['http' => [
+            'method' => 'POST', 'header' => 'Content-Type: application/x-www-form-urlencoded', 'content' => $body, 'timeout' => 8]]));
+    }
+    $res = is_string($raw) ? json_decode($raw, true) : null;
+    if (!is_array($res)) return 'Could not check the captcha right now. Please try again.';
+    if (!empty($res['success'])) return null;
+    $codes = (array)($res['error-codes'] ?? []);
+    if (array_intersect($codes, ['invalid-input-secret', 'missing-input-secret']))
+        return APP_DEBUG ? 'DEBUG: the reCAPTCHA secret key in Settings is wrong.' : 'Captcha is not set up correctly. Please try again later.';
+    return 'Captcha check failed. Please tick “I’m not a robot” and send again.';
+}
+
 function clean_text(string $s, bool $multiline = false): string {
     $s = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $s) ?? '';   // control chars
     if (!$multiline) $s = preg_replace('/\s+/u', ' ', $s) ?? '';
@@ -52,6 +85,9 @@ function submit_contact(array $in): array {
     // Link-spam guard
     if (preg_match_all('~https?://|www\.~i', $message) > 2) $err['message'] = 'Too many links in message.';
     if ($err) return [false, $err];
+
+    // Captcha last: only spend a Google check on otherwise-valid messages
+    if (($cerr = captcha_verify((string)($in['g-recaptcha-response'] ?? ''))) !== null) return [false, ['captcha' => $cerr]];
 
     // Exact duplicate in the last hour -> ignore quietly
     if (fetch_val("SELECT COUNT(*) FROM contact_messages WHERE email=? AND message=? AND created_at > NOW() - INTERVAL 1 HOUR", [$email, $message])) {

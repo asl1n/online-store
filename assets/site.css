@@ -2573,3 +2573,16 @@ footer .cols .social a:hover {
     padding: 8px 14px;
   }
 }
+
+/* reCAPTCHA checkbox on the contact form (the widget is a fixed 304px wide) */
+.cform .captcha {
+  margin: 4px 0 16px;
+  max-width: 100%;
+  min-height: 78px;
+}
+@media (max-width: 380px) {
+  .cform .captcha .g-recaptcha {
+    transform: scale(0.88);
+    transform-origin: 0 0;
+  }
+}
