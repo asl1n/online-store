@@ -1237,8 +1237,8 @@ label.switch {
 }
 
 /* ---- round 13: compact page header ----
-   Desktop: page title in the top bar; ONE row below = search/filters (left) + Create (right); total lives in the table footer.
-   Phones (<=760px): no room in the top bar, so the title drops into the page row, search sits under it. */
+   Create / Back always travel WITH the page title: beside it in the top bar, or beside it in the page on phones (<=760px) where the title drops down.
+   Search / filters: middle of the top bar when there is room (>=1200px), otherwise one row under the top bar (full width on phones). */
 .top-title {
   margin: 0;
   font-size: 18px;
@@ -1253,13 +1253,70 @@ label.switch {
 .content {
   padding-top: 24px;
 }
+
+/* top-bar copies */
+.top-actions,
+.top-tools {
+  display: none;
+  align-items: center;
+}
+.top-actions {
+  gap: 8px;
+  flex-shrink: 0;
+}
+.top-actions .btn {
+  min-height: 38px;
+}
+.top-tools {
+  flex: 0 1 320px;
+  min-width: 170px;
+}
+.top-tools form {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+}
+.top-tools select {
+  height: 38px;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+.topbar .searchbox {
+  width: 100%;
+}
+.topbar .searchbox input {
+  height: 38px;
+  padding: 0 34px 0 38px !important;
+  font-size: 14px;
+}
+.topbar .searchbox svg {
+  left: 12px;
+  width: 16px;
+  height: 16px;
+}
+@media (min-width: 761px) {
+  .top-actions {
+    display: flex;
+  }
+}
+@media (min-width: 1200px) {
+  .top-tools {
+    display: flex;
+    margin: 0 auto; /* centred in the space between the title/buttons and the user menu */
+  }
+  .top-tools ~ .top-right {
+    margin-left: 0;
+  }
+}
+
+/* page row (under the top bar) */
 .pagebar {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   grid-template-areas: "tools actions";
   align-items: center;
   gap: 12px;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 .pagebar .pagetitle {
   display: none;
@@ -1277,6 +1334,7 @@ label.switch {
   gap: 10px;
 }
 .pagebar .actions {
+  display: none; /* above 760px the buttons live in the top bar */
   grid-area: actions;
   justify-self: end;
   flex-wrap: nowrap;
@@ -1289,8 +1347,21 @@ label.switch {
 .pagebar-tools select {
   min-width: 200px;
 }
-.pagebar.is-bare {
-  display: none;
+.pagebar .searchbox {
+  width: 300px;
+}
+.pagebar .searchbox input {
+  height: 40px;
+  padding: 0 34px 0 40px !important;
+  font-size: 14px;
+}
+.pagebar.no-tools {
+  display: none; /* nothing to show here once the buttons are in the top bar */
+}
+@media (min-width: 1200px) {
+  .pagebar {
+    display: none;
+  }
 }
 
 /* list card footer: total on the left, pager on the right */
@@ -1322,11 +1393,6 @@ label.switch {
   overflow: hidden;
 }
 
-@media (max-width: 1000px) {
-  .pagebar {
-    margin-bottom: 16px;
-  }
-}
 @media (max-width: 760px) {
   .top-title {
     display: none;
@@ -1334,7 +1400,9 @@ label.switch {
   .content {
     padding-top: 16px;
   }
-  .pagebar {
+  .pagebar,
+  .pagebar.no-tools {
+    display: grid;
     grid-template-areas: "title actions" "tools tools";
     row-gap: 12px;
     margin-bottom: 14px;
@@ -1342,14 +1410,14 @@ label.switch {
   .pagebar.no-tools {
     grid-template-areas: "title actions";
   }
-  .pagebar.is-bare {
-    display: grid;
-  }
   .pagebar .pagetitle {
     display: block;
   }
+  .pagebar .actions {
+    display: flex;
+  }
   .pagebar-tools form,
-  .searchbox {
+  .pagebar .searchbox {
     width: 100%;
   }
   .pagebar-tools select {

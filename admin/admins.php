@@ -30,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $act = 'reset';
     }
 }
-$back = '<a class="btn ghost" href="' . e($self) . '">' . ui_icon_back() . 'Back to list</a>';
+$back = ui_back_btn($self);
 
 if ($act === 'new') {
     admin_header('Add Admin', 'admins', $back); echo ui_errors_summary($errors); ?>

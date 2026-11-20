@@ -169,7 +169,7 @@ function crud_run(array $c): void {
         $vals = $posted ? array_merge(crud_values($c, $row), $posted) : crud_values($c, $row);
         if ($posted) foreach ($c['fields'] as $f) if ($f['type'] === 'checkbox') $vals[$f['name']] = isset($posted[$f['name']]) ? 1 : 0;
         foreach ($c['fields'] as $f) if ($f['type'] === 'richtext') $GLOBALS['need_editor'] = true;
-        admin_header(($act === 'edit' ? 'Edit ' : 'Add ') . $c['entity'], $c['active'], '<a class="btn ghost" href="' . e($self) . '">' . ui_icon_back() . 'Back to list</a>');
+        admin_header(($act === 'edit' ? 'Edit ' : 'Add ') . $c['entity'], $c['active'], ui_back_btn($self));
         echo ui_errors_summary($errors); ?>
         <form method="post" enctype="multipart/form-data" class="card formcard"><?= csrf_field() ?><div class="form-grid">
         <?php foreach ($c['fields'] as $f):

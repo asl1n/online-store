@@ -119,7 +119,7 @@
   $$("[data-live-search]").forEach(function (f) {
     var i = $("input", f),
       t;
-    if (i.value) {
+    if (i.value && i.offsetParent !== null) {
       i.focus();
       var n = i.value.length;
       i.setSelectionRange(n, n);

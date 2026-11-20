@@ -10,12 +10,16 @@ function badge_count(int $n): string { return $n > 99 ? '99+' : (string)$n; }
 function go(string $url): never { header('Location: ' . $url); exit; }
 
 // ---------- shared UI components ----------
-function ui_icon_plus(): string { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>'; }
 function ui_icon_back(): string { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>'; }
+/** The one "Back" button. Visible text stays short; screen readers hear where it goes. */
+function ui_back_btn(string $href, string $to = 'list'): string {
+    $a = 'Back to ' . $to;
+    return '<a class="btn ghost" href="' . e($href) . '" aria-label="' . e($a) . '" title="' . e($a) . '">' . ui_icon_back() . 'Back</a>';
+}
 /** The one "Create" button used on every list page. Visible text stays short; screen readers still hear what it creates. */
 function ui_create_btn(string $href, string $entity, string $label = 'Create'): string {
     $a = 'Create ' . strtolower($entity);
-    return '<a class="btn" href="' . e($href) . '" aria-label="' . e($a) . '" title="' . e($a) . '">' . ui_icon_plus() . e($label) . '</a>';
+    return '<a class="btn" href="' . e($href) . '" aria-label="' . e($a) . '" title="' . e($a) . '">' . e($label) . '</a>';
 }
 /** Live search box (see data-live-search in admin.js). $clear = URL that resets the search. */
 function ui_search(string $what, string $value, string $clear): string {
@@ -47,9 +51,10 @@ function ui_errors_summary(array $errors): string {
 }
 
 /**
- * $actions = buttons on the right of the page row (e.g. Create). $tools = left side of the same row (search, filters).
- * Desktop: the page title lives in the top bar and the page row is just tools + actions.
- * Phones: the top bar has no room, so the title comes down into the page row (title + actions, tools underneath).
+ * $actions = buttons (e.g. Create, Back). $tools = search / filters.
+ * The buttons always travel WITH the title: beside it in the top bar, or (phones <=760px, where the title drops into the page) beside it there.
+ * Search / filters sit in the middle of the top bar when there is room (>=1200px); otherwise they take a row of their own under it.
+ * The markup is rendered once per place and CSS shows only one, so keep $tools / $actions free of ids.
  */
 function admin_header(string $title, string $active = '', string $actions = '', string $tools = ''): void {
     $a = require_admin();
@@ -78,6 +83,8 @@ function admin_header(string $title, string $active = '', string $actions = '', 
 <header class="topbar">
   <button class="icon-btn menu" type="button" data-side-toggle aria-label="Open menu">&#9776;</button>
   <h1 class="top-title"><?= e($title) ?></h1>
+  <?php if ($actions !== ''): ?><div class="top-actions"><?= $actions ?></div><?php endif; ?>
+  <?php if ($tools !== ''): ?><div class="top-tools"><?= $tools ?></div><?php endif; ?>
   <div class="top-right">
     <a class="icon-link<?= $unread ? ' has-new' : '' ?>" href="<?= BASE_URL ?>/admin/messages" aria-label="<?= $unread ? (int)$unread . ' unread messages' : 'Messages' ?>" title="<?= $unread ? (int)$unread . ' unread' : 'Messages' ?>"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg><?php if ($unread): ?><span class="dot<?= $unread > 99 ? ' wide' : ($unread > 9 ? ' two' : '') ?>" aria-hidden="true"><?= badge_count($unread) ?></span><?php endif; ?></a>
     <a class="btn ghost sm hide-xs" href="<?= BASE_URL ?>/" target="_blank" rel="noopener">View site &#8599;</a>
@@ -95,7 +102,7 @@ function admin_header(string $title, string $active = '', string $actions = '', 
   </div>
 </header>
 <main class="content">
-<div class="pagebar<?= $tools === '' ? ' no-tools' : '' ?><?= ($tools === '' && $actions === '') ? ' is-bare' : '' ?>"><h1 class="pagetitle"><?= e($title) ?></h1>
+<div class="pagebar<?= $tools === '' ? ' no-tools' : '' ?>"><h1 class="pagetitle"><?= e($title) ?></h1>
 <?php if ($tools !== ''): ?><div class="pagebar-tools"><?= $tools ?></div><?php endif; ?>
 <?php if ($actions !== ''): ?><div class="actions"><?= $actions ?></div><?php endif; ?></div>
 <?php foreach (flashes() as [$t, $m]): ?><?= ui_alert($t === 'ok' ? 'ok' : 'err', $m) ?><?php endforeach;

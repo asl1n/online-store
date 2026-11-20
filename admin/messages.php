@@ -13,7 +13,7 @@ if ($id) {
     $m = fetch_one('SELECT * FROM contact_messages WHERE id=?', [$id]);
     if (!$m) { flash('err', 'That message no longer exists.'); go($self); }
     q('UPDATE contact_messages SET is_read=1 WHERE id=?', [$id]);
-    admin_header('Message', 'messages', '<a class="btn ghost" href="' . e($self) . '">' . ui_icon_back() . 'Back to inbox</a>'); ?>
+    admin_header('Message', 'messages', ui_back_btn($self, 'inbox')); ?>
     <?php $when = strtotime((string)$m['created_at']); $subj = trim((string)$m['subject']);
       $re = 'mailto:' . $m['email'] . '?subject=' . rawurlencode('Re: ' . ($subj !== '' ? $subj : 'Your message to ' . site_name())); ?>
     <div class="card msg">
