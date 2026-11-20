@@ -1238,7 +1238,7 @@ label.switch {
 
 /* ---- round 13: compact page header ----
    Create / Back always travel WITH the page title: beside it in the top bar, or beside it in the page on phones (<=760px) where the title drops down.
-   Search / filters: middle of the top bar when there is room (>=1200px), otherwise one row under the top bar (full width on phones). */
+   Search / filters: right after those buttons (or after the title when there are none) when the top bar has room (>=1200px), otherwise one row under the top bar (full width on phones). */
 .top-title {
   margin: 0;
   font-size: 18px;
@@ -1265,11 +1265,20 @@ label.switch {
   flex-shrink: 0;
 }
 .top-actions .btn {
-  min-height: 38px;
+  min-height: 32px;
+  padding: 0 12px;
+  gap: 6px;
+  font-size: 13px;
+  border-radius: 8px;
+}
+.top-actions .btn svg {
+  width: 14px;
+  height: 14px;
 }
 .top-tools {
-  flex: 0 1 320px;
+  flex: 0 1 300px;
   min-width: 170px;
+  margin-left: 6px;
 }
 .top-tools form {
   display: flex;
@@ -1277,22 +1286,29 @@ label.switch {
   min-width: 0;
 }
 .top-tools select {
-  height: 38px;
-  padding-top: 0;
-  padding-bottom: 0;
+  height: 34px;
+  padding: 0 10px;
+  font-size: 13px;
+  border-radius: 8px;
 }
 .topbar .searchbox {
   width: 100%;
 }
 .topbar .searchbox input {
-  height: 38px;
-  padding: 0 34px 0 38px !important;
-  font-size: 14px;
+  height: 34px;
+  padding: 0 32px 0 34px !important;
+  font-size: 13px;
 }
 .topbar .searchbox svg {
-  left: 12px;
-  width: 16px;
-  height: 16px;
+  left: 11px;
+  width: 15px;
+  height: 15px;
+}
+.topbar .searchbox .clear {
+  width: 20px;
+  height: 20px;
+  right: 7px;
+  font-size: 15px;
 }
 @media (min-width: 761px) {
   .top-actions {
@@ -1301,11 +1317,7 @@ label.switch {
 }
 @media (min-width: 1200px) {
   .top-tools {
-    display: flex;
-    margin: 0 auto; /* centred in the space between the title/buttons and the user menu */
-  }
-  .top-tools ~ .top-right {
-    margin-left: 0;
+    display: flex; /* sits right after the Create/Back button, or right after the title when there is none */
   }
 }
 
