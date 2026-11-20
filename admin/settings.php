@@ -26,6 +26,12 @@ $sections = [
     'recaptcha_site_key' => ['Site key', 'text', 100, false, 'Get both keys free at google.com/recaptcha/admin: create a site, choose “reCAPTCHA v2” → “I’m not a robot” checkbox, and add your domain (and localhost for testing). The captcha turns on only when BOTH keys are saved; leave empty to keep it off.', 'recaptcha', true],
     'recaptcha_secret_key' => ['Secret key', 'secret', 100, false, 'Keep this private. It is never shown again after saving. Leave blank to keep the saved key.', 'recaptcha', true],
   ],
+  'Google & analytics' => [
+    'gtm_id' => ['Google Tag Manager ID', 'text', 20, false, 'Looks like GTM-XXXXXXX (tagmanager.google.com → your container). When set, manage GA4, Ads, pixels etc. inside Tag Manager. Not loaded for logged-in admins.', 'gtm', true],
+    'ga4_id' => ['Google Analytics 4 ID', 'text', 20, false, 'Looks like G-XXXXXXXXXX (analytics.google.com → Admin → Data streams). Leave empty if GA4 runs through Tag Manager, so visits are not counted twice.', 'ga4', true],
+    'gsc_verification' => ['Search Console verification', 'text', 200, false, 'Google Search Console → Settings → Ownership verification → “HTML tag”. Paste just the code, or the whole <meta> tag. Then submit your sitemap: /sitemap.xml', 'gsc', true],
+    'bing_verification' => ['Bing Webmaster verification', 'text', 200, false, 'Optional. Bing Webmaster Tools → “HTML Meta Tag”. Paste the code or the whole <meta> tag.', 'bing', true],
+  ],
   'Footer & social' => [
     'footer_about' => ['Footer description', 'textarea', 300, false, 'Short text under the footer logo.', '', false],
     'facebook_url' => ['Facebook page URL', 'text', 255, false, 'Must start with https://', 'url', true],
@@ -54,12 +60,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $new[$k] = $v; continue;
         }
         $v = clean_text((string)($_POST[$k] ?? ''), $type === 'textarea'); $vals[$k] = $v;
+        if (in_array($kind, ['gsc', 'bing'], true) && preg_match('/content\s*=\s*["\']([^"\']+)["\']/i', $v, $mm)) $v = $vals[$k] = trim($mm[1]);   // they pasted the whole <meta> tag
+        if (in_array($kind, ['gtm', 'ga4'], true)) $v = $vals[$k] = strtoupper(str_replace(' ', '', $v));
         if ($req && $v === '') $errors[$k] = "$label is required.";
         elseif (mb_strlen($v) > $max) $errors[$k] = "$label is too long (max $max characters).";
         elseif ($v !== '' && $kind === 'email' && !filter_var($v, FILTER_VALIDATE_EMAIL)) $errors[$k] = 'Enter a valid email address.';
         elseif ($v !== '' && $kind === 'url' && !preg_match('~^https?://[^\s]+\.[^\s]+$~i', $v)) $errors[$k] = 'Enter a full link starting with http:// or https://';
         elseif ($v !== '' && $kind === 'twitter' && !preg_match('/^@?[A-Za-z0-9_]{1,15}$/', $v)) $errors[$k] = 'Use a handle like @aslinstore (letters, numbers, _ only).';
         elseif ($v !== '' && $kind === 'recaptcha' && !preg_match('/^[A-Za-z0-9_-]{20,100}$/', $v)) $errors[$k] = 'That does not look like a valid key (letters, numbers, - and _ only).';
+        elseif ($v !== '' && $kind === 'gtm' && !preg_match('/^GTM-[A-Z0-9]{4,10}$/', $v)) $errors[$k] = 'Enter an ID like GTM-ABC1234.';
+        elseif ($v !== '' && $kind === 'ga4' && !preg_match('/^G-[A-Z0-9]{6,14}$/', $v)) $errors[$k] = 'Enter an ID like G-ABCD123456 (GA4 IDs start with G-).';
+        elseif ($v !== '' && $kind === 'gsc' && !preg_match('/^[A-Za-z0-9_-]{20,100}$/', $v)) $errors[$k] = 'That does not look like a Search Console code (paste the content value, or the whole meta tag).';
+        elseif ($v !== '' && $kind === 'bing' && !preg_match('/^[A-Fa-f0-9]{32}$/', $v)) $errors[$k] = 'Bing codes are 32 letters/numbers (0-9, A-F).';
         elseif ($v !== '' && $kind === 'phone' && !preg_match('/^[0-9+\-\s(),\/]{5,100}$/', $v)) $errors[$k] = 'Use digits, spaces, + - ( ) , / only.';
         else $new[$k] = ($kind === 'twitter' && $v !== '') ? '@' . ltrim($v, '@') : $v;
     }

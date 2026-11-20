@@ -212,14 +212,32 @@ function render_content(?string $s): string {
 }
 
 // ---- Security headers ----
-/** Sends the Content-Security-Policy. $captcha = true additionally allows Google reCAPTCHA (contact page only). */
-function send_csp(bool $captcha = false): void {
+/**
+ * Sends the Content-Security-Policy. Features are cumulative per request, so the captcha and the
+ * tracking tags can both be allowed on the same page without one overriding the other.
+ * Features: 'captcha' (Google reCAPTCHA, contact page) and 'tags' (Google Tag Manager / Analytics, public pages).
+ */
+function send_csp(string ...$add): void {
+    static $on = [];
+    foreach ($add as $f) $on[$f] = true;
     if (headers_sent()) return;
-    $g = $captcha ? ' https://www.google.com https://www.gstatic.com' : '';
-    header("Content-Security-Policy: default-src 'self'; img-src 'self' data: blob:" . ($captcha ? ' https://www.gstatic.com' : '')
-        . "; style-src 'self' 'unsafe-inline'" . ($captcha ? ' https://www.gstatic.com' : '') . "; script-src 'self'" . $g
-        . ($captcha ? '; frame-src https://www.google.com https://recaptcha.google.com' : '')
-        . "; frame-ancestors 'none'; form-action 'self'; base-uri 'self'");
+    $src = ['script' => ["'self'"], 'style' => ["'self'", "'unsafe-inline'"], 'img' => ["'self'", 'data:', 'blob:'], 'connect' => ["'self'"], 'frame' => []];
+    if (isset($on['captcha'])) {
+        array_push($src['script'], 'https://www.google.com', 'https://www.gstatic.com');
+        $src['style'][] = 'https://www.gstatic.com'; $src['img'][] = 'https://www.gstatic.com';
+        array_push($src['frame'], 'https://www.google.com', 'https://recaptcha.google.com');
+    }
+    if (isset($on['tags'])) {
+        array_push($src['script'], 'https://www.googletagmanager.com', 'https://www.google-analytics.com');
+        array_push($src['img'], 'https://www.googletagmanager.com', 'https://www.google-analytics.com', 'https://*.google-analytics.com', 'https://*.googletagmanager.com');
+        array_push($src['connect'], 'https://www.google-analytics.com', 'https://*.google-analytics.com', 'https://*.analytics.google.com', 'https://*.googletagmanager.com', 'https://stats.g.doubleclick.net');
+        $src['frame'][] = 'https://www.googletagmanager.com';
+    }
+    $csp = "default-src 'self'; img-src " . implode(' ', array_unique($src['img'])) . '; style-src ' . implode(' ', array_unique($src['style']))
+         . '; script-src ' . implode(' ', array_unique($src['script'])) . '; connect-src ' . implode(' ', array_unique($src['connect']))
+         . ($src['frame'] ? '; frame-src ' . implode(' ', array_unique($src['frame'])) : '')
+         . "; frame-ancestors 'none'; form-action 'self'; base-uri 'self'";
+    header('Content-Security-Policy: ' . $csp);
 }
 function send_security_headers(): void {
     if (headers_sent()) return;

@@ -1,6 +1,6 @@
 <?php
 require __DIR__ . '/includes/site.php';
-if (captcha_enabled()) send_csp(true);   // let Google's reCAPTCHA script/frame load on this page only
+if (captcha_enabled()) send_csp('captcha');   // let Google's reCAPTCHA script/frame load on this page only
 $errors = []; $old = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     [$ok, $errors] = submit_contact($_POST);

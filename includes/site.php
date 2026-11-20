@@ -115,6 +115,13 @@ function logo_html(string $key): string {
     return '<span class="logo-text"><b>' . e($p[0]) . '</b>' . (isset($p[1]) ? '<i>' . e($p[1]) . '</i>' : '') . '</span>';
 }
 
+/** Tracking IDs from Settings (already format-checked on save). Nothing is loaded for logged-in admins, so your own visits don't pollute analytics. */
+function tracking(): array {
+    $on = empty($_SESSION['admin_id']);
+    $gtm = $on ? setting('gtm_id') : ''; $ga = ($on && $gtm === '') ? setting('ga4_id') : '';   // GA4 is loaded inside GTM when GTM is set
+    return ['gtm' => preg_match('/^GTM-[A-Z0-9]{4,10}$/', $gtm) ? $gtm : '', 'ga' => preg_match('/^G-[A-Z0-9]{6,14}$/', $ga) ? $ga : ''];
+}
+
 /** Share-card image: the page's own image, else the "Social share image" setting, else the header logo. @return array{url:string,w:int,h:int}|null */
 function share_image(?string $own): ?array {
     foreach ([$own, setting('og_image'), setting('header_logo')] as $rel) {
@@ -127,12 +134,14 @@ function share_image(?string $own): ?array {
 
 /** $meta keys: image (upload path), type, canonical (path after BASE_URL), noindex, jsonld (array), og (extra [property => content] tags). */
 function site_header(string $title, string $active = '', string $desc = '', array $meta = []): void {
+    $trk = tracking(); if ($trk['gtm'] || $trk['ga']) send_csp('tags');
+    $gsc = setting('gsc_verification'); $bing = setting('bing_verification');
     $cats = fetch_all('SELECT c.name,c.slug,COUNT(p.id) AS cnt FROM categories c LEFT JOIN products p ON p.category_id=c.id AND p.is_active=1 WHERE c.is_active=1 GROUP BY c.id ORDER BY c.sort_order, c.name');
     $nav = ['home' => ['Home', '/index.php'], 'shop' => ['Shop', '/shop.php'], 'blog' => ['Blog', '/blogs.php'], 'contact' => ['Contact', '/contact.php']];
     $name = site_name(); $full = $title === 'Home' ? $name : $title . ' | ' . $name;
     $curCat = $active === 'shop' ? (string)($_GET['category'] ?? '') : '';
     $phones = setting('phones'); $addr = setting('address'); $email = setting('email');
-    $d = seo_trim($desc ?: setting('meta_description')); $origin = site_origin();
+    $d = seo_trim($desc ?: setting('meta_description') ?: $name . ' – shop online. Browse products and contact us for prices and availability.'); $origin = site_origin();
     $canon = isset($meta['canonical']) ? $origin . BASE_URL . pretty_path($meta['canonical']) : $origin . strtok((string)($_SERVER['REQUEST_URI'] ?? '/'), '?');
     $si = share_image($meta['image'] ?? null); $ogimg = $si['url'] ?? '';
     $ogTitle = $title === 'Home' ? $name : $title; $tw = setting('twitter_handle');
@@ -148,7 +157,11 @@ function site_header(string $title, string $active = '', string $desc = '', arra
 <?php endif; endforeach; ?><meta name="twitter:card" content="<?= $ogimg ? 'summary_large_image' : 'summary' ?>"><meta name="twitter:title" content="<?= e($ogTitle) ?>"><meta name="twitter:description" content="<?= e($d) ?>">
 <?php if ($ogimg): ?><meta name="twitter:image" content="<?= e($ogimg) ?>"><meta name="twitter:image:alt" content="<?= e($ogTitle) ?>"><?php endif; ?><?php if ($tw): ?><meta name="twitter:site" content="<?= e($tw) ?>"><?php endif; ?>
 <?php if (!empty($meta['jsonld'])): ?><script type="application/ld+json"><?= json_encode(['@context' => 'https://schema.org'] + $meta['jsonld'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?></script><?php endif; ?>
-<link rel="stylesheet" href="<?= asset('/assets/site.css') ?>"></head><body>
+<?php if (preg_match('/^[A-Za-z0-9_-]{20,100}$/', $gsc)): ?><meta name="google-site-verification" content="<?= e($gsc) ?>">
+<?php endif; if (preg_match('/^[A-Fa-f0-9]{32}$/', $bing)): ?><meta name="msvalidate.01" content="<?= e($bing) ?>">
+<?php endif; ?><link rel="stylesheet" href="<?= asset('/assets/site.css') ?>">
+<?php if ($trk['gtm'] || $trk['ga']): ?><script src="<?= asset('/assets/tags.js') ?>" defer<?= $trk['gtm'] ? ' data-gtm="' . e($trk['gtm']) . '"' : '' ?><?= $trk['ga'] ? ' data-ga="' . e($trk['ga']) . '"' : '' ?>></script><?php endif; ?></head><body>
+<?php if ($trk['gtm']): ?><noscript><iframe src="https://www.googletagmanager.com/ns.html?id=<?= e($trk['gtm']) ?>" height="0" width="0" style="display:none;visibility:hidden" title="Google Tag Manager"></iframe></noscript><?php endif; ?>
 <?php if ($phones || $addr || $email): ?><div class="strip"><div class="wrap">
   <span class="addr"><?php if ($addr): ?><?= ico('pin') ?><?= e($addr) ?><?php endif; ?></span>
   <div class="reach"><?php if ($phones): ?><span class="item"><?= ico('phone') ?><?= phone_links($phones) ?></span><?php endif; ?>
