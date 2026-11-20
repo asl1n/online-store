@@ -1,0 +1,44 @@
+# .github/workflows/deploy.yml
+# Push to `main` -> check PHP syntax -> upload only the changed files to InfinityFree over FTP.
+name: Deploy to InfinityFree
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # also adds a "Run workflow" button in the Actions tab
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false # never cut an upload in half
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check PHP syntax (stops the deploy if any file is broken)
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+      - run: find . -name '*.php' -not -path './.git/*' -print0 | xargs -0 -n1 php -l > /dev/null
+
+      - name: Upload changed files over FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ftpupload.net
+          username: ${{ secrets.FTP_USERNAME }} # e.g. if0_43472518
+          password: ${{ secrets.FTP_PASSWORD }} # FTP password from the InfinityFree panel
+          protocol: ftp
+          port: 21
+          server-dir: /htdocs/ # must end with /  (use what your File Manager shows)
+          # Never touch these on the server (your live settings and uploaded images):
+          exclude: |
+            **/.git*
+            **/.git*/**
+            .github/**
+            config/**
+            uploads/**
+            README.md
+            database/**
+            install.php
