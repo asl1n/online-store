@@ -5,7 +5,8 @@ if (!$p) not_found();
 $imgs = $p['image'] ? [$p['image']] : [];
 foreach (fetch_all('SELECT image FROM product_images WHERE product_id=? ORDER BY sort_order, id', [$p['id']]) as $g) $imgs[] = $g['image'];
 $pd = seo_trim($p['short_description'] ?: $p['description']); $canonPath = pretty_path('/product.php?slug=' . urlencode($p['slug'])); $origin = site_origin();
-site_header($p['name'], 'shop', $pd, ['type' => 'product', 'image' => $p['image'], 'canonical' => $canonPath, 'jsonld' => array_filter([
+site_header($p['name'], 'shop', $pd, ['type' => 'product', 'image' => $p['image'] ?: ($imgs[0] ?? null), 'canonical' => $canonPath,
+    'og' => ['product:price:amount' => number_format(final_price($p), 2, '.', ''), 'product:price:currency' => 'NPR', 'product:brand' => $p['brand_name'] ?? null], 'jsonld' => array_filter([
     '@type' => 'Product', 'name' => $p['name'], 'description' => $pd, 'image' => $imgs ? array_map(fn($i) => $origin . upload_url($i), $imgs) : null,
     'brand' => $p['brand_name'] ? ['@type' => 'Brand', 'name' => $p['brand_name']] : null, 'category' => $p['category_name'] ?: null,
     'offers' => ['@type' => 'Offer', 'url' => $origin . BASE_URL . $canonPath, 'priceCurrency' => 'NPR', 'price' => number_format(final_price($p), 2, '.', '')]])]); ?>

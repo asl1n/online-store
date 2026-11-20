@@ -5,6 +5,8 @@ function initials(string $n): string {
     $p = preg_split('/\s+/', trim($n)); $i = mb_strtoupper(mb_substr($p[0] ?? '', 0, 1) . mb_substr($p[1] ?? '', 0, 1));
     return $i ?: 'A';
 }
+/** Badge text: 1-99 as is, anything bigger as 99+ so it never grows past 3 characters. */
+function badge_count(int $n): string { return $n > 99 ? '99+' : (string)$n; }
 function go(string $url): never { header('Location: ' . $url); exit; }
 
 // ---------- shared UI components ----------
@@ -51,7 +53,7 @@ function admin_header(string $title, string $active = '', string $actions = ''):
   <a class="brand" href="<?= BASE_URL ?>/admin/index.php"><?= e(mb_strtoupper(site_name())) ?><small>ADMIN PANEL</small></a>
   <nav>
   <?php foreach ($groups as $g => $items): ?><div class="navgroup"><?= e($g) ?></div>
-    <?php foreach ($items as $it): ?><a href="<?= BASE_URL ?>/admin/<?= $it[2] ?>" class="<?= $it[0] === $active ? 'on' : '' ?>"><?= e($it[1]) ?><?php if (!empty($it[3])): ?><span class="badge"><?= (int)$it[3] ?></span><?php endif; ?></a><?php endforeach; ?>
+    <?php foreach ($items as $it): ?><a href="<?= BASE_URL ?>/admin/<?= $it[2] ?>" class="<?= $it[0] === $active ? 'on' : '' ?>"><?= e($it[1]) ?><?php if (!empty($it[3])): ?><span class="badge" aria-label="<?= (int)$it[3] ?> unread"><?= badge_count((int)$it[3]) ?></span><?php endif; ?></a><?php endforeach; ?>
   <?php endforeach; ?>
   </nav>
 </aside>
@@ -61,7 +63,7 @@ function admin_header(string $title, string $active = '', string $actions = ''):
   <button class="icon-btn menu" type="button" data-side-toggle aria-label="Open menu">&#9776;</button>
   <div class="crumbs">Admin <span>/</span> <b><?= e($title) ?></b></div>
   <div class="top-right">
-    <a class="icon-link<?= $unread ? ' has-new' : '' ?>" href="<?= BASE_URL ?>/admin/messages.php" aria-label="<?= $unread ? (int)$unread . ' unread messages' : 'Messages' ?>" title="<?= $unread ? (int)$unread . ' unread' : 'Messages' ?>"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg><?php if ($unread): ?><span class="dot"><?= $unread > 99 ? '99+' : (int)$unread ?></span><?php endif; ?></a>
+    <a class="icon-link<?= $unread ? ' has-new' : '' ?>" href="<?= BASE_URL ?>/admin/messages.php" aria-label="<?= $unread ? (int)$unread . ' unread messages' : 'Messages' ?>" title="<?= $unread ? (int)$unread . ' unread' : 'Messages' ?>"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg><?php if ($unread): ?><span class="dot<?= $unread > 99 ? ' wide' : ($unread > 9 ? ' two' : '') ?>" aria-hidden="true"><?= badge_count($unread) ?></span><?php endif; ?></a>
     <a class="btn ghost sm hide-xs" href="<?= BASE_URL ?>/index.php" target="_blank" rel="noopener">View site &#8599;</a>
     <div class="user" data-dropdown>
       <button class="user-btn" type="button" aria-haspopup="true" aria-expanded="false">

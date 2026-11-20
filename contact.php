@@ -1,5 +1,6 @@
 <?php
 require __DIR__ . '/includes/site.php';
+if (captcha_enabled()) send_csp(true);   // let Google's reCAPTCHA script/frame load on this page only
 $errors = []; $old = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     [$ok, $errors] = submit_contact($_POST);
@@ -24,6 +25,8 @@ site_header('Contact', 'contact', 'Contact ' . site_name() . ' for product enqui
 <?php if (isset($errors[$k])): ?><div class="err"><?= e($errors[$k]) ?></div><?php endif; endforeach; ?>
 <label>Message<textarea name="message" rows="6" minlength="5" maxlength="3000" placeholder="Tell us what you need, e.g. size, colour or price of a product." required><?= $v('message') ?></textarea></label>
 <?php if (isset($errors['message'])): ?><div class="err"><?= e($errors['message']) ?></div><?php endif; ?>
+<?= captcha_widget() ?>
+<?php if (isset($errors['captcha'])): ?><div class="err"><?= e($errors['captcha']) ?></div><?php endif; ?>
 <button class="btn">Send message</button></form>
 <div class="infobox"><h3>Get in touch</h3><p class="muted">Call, email or send us a message. We usually reply within a day.</p>
 <?php if (setting('phones') || setting('email') || setting('address')): ?><ul class="ilist">

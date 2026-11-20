@@ -34,7 +34,7 @@ function render_text(?string $s): string {
 }
 function not_found(): never {
     http_response_code(404);
-    site_header('Not found');
+    site_header('Not found', '', '', ['noindex' => true]);
     echo '<div class="wrap section"><h1>Page not found</h1><p><a class="btn" href="' . url('/index.php') . '">Back home</a></p></div>';
     site_footer(); exit;
 }
@@ -115,7 +115,17 @@ function logo_html(string $key): string {
     return '<span class="logo-text"><b>' . e($p[0]) . '</b>' . (isset($p[1]) ? '<i>' . e($p[1]) . '</i>' : '') . '</span>';
 }
 
-/** $meta keys: image (upload path), type, canonical (path after BASE_URL), noindex, jsonld (array). */
+/** Share-card image: the page's own image, else the "Social share image" setting, else the header logo. @return array{url:string,w:int,h:int}|null */
+function share_image(?string $own): ?array {
+    foreach ([$own, setting('og_image'), setting('header_logo')] as $rel) {
+        if (!$rel || str_contains((string)$rel, '..')) continue;
+        $file = UPLOAD_DIR . $rel; $sz = is_file($file) ? @getimagesize($file) : false;
+        if (is_file($file)) return ['url' => site_origin() . upload_url($rel), 'w' => (int)($sz[0] ?? 0), 'h' => (int)($sz[1] ?? 0)];
+    }
+    return null;
+}
+
+/** $meta keys: image (upload path), type, canonical (path after BASE_URL), noindex, jsonld (array), og (extra [property => content] tags). */
 function site_header(string $title, string $active = '', string $desc = '', array $meta = []): void {
     $cats = fetch_all('SELECT c.name,c.slug,COUNT(p.id) AS cnt FROM categories c LEFT JOIN products p ON p.category_id=c.id AND p.is_active=1 WHERE c.is_active=1 GROUP BY c.id ORDER BY c.sort_order, c.name');
     $nav = ['home' => ['Home', '/index.php'], 'shop' => ['Shop', '/shop.php'], 'blog' => ['Blog', '/blogs.php'], 'contact' => ['Contact', '/contact.php']];
@@ -124,15 +134,19 @@ function site_header(string $title, string $active = '', string $desc = '', arra
     $phones = setting('phones'); $addr = setting('address'); $email = setting('email');
     $d = seo_trim($desc ?: setting('meta_description')); $origin = site_origin();
     $canon = isset($meta['canonical']) ? $origin . BASE_URL . pretty_path($meta['canonical']) : $origin . strtok((string)($_SERVER['REQUEST_URI'] ?? '/'), '?');
-    $img = $meta['image'] ?? setting('header_logo'); $ogimg = $img ? $origin . upload_url($img) : '';
-    $ogTitle = $title === 'Home' ? $name : $title;
+    $si = share_image($meta['image'] ?? null); $ogimg = $si['url'] ?? '';
+    $ogTitle = $title === 'Home' ? $name : $title; $tw = setting('twitter_handle');
     ?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= e($full) ?></title><meta name="description" content="<?= e($d) ?>"><?= favicon_tag() ?>
 <link rel="canonical" href="<?= e($canon) ?>">
-<?php if (!empty($meta['noindex'])): ?><meta name="robots" content="noindex,follow"><?php endif; ?>
-<meta property="og:site_name" content="<?= e($name) ?>"><meta property="og:type" content="<?= e($meta['type'] ?? 'website') ?>"><meta property="og:title" content="<?= e($ogTitle) ?>">
-<meta property="og:description" content="<?= e($d) ?>"><meta property="og:url" content="<?= e($canon) ?>"><?php if ($ogimg): ?><meta property="og:image" content="<?= e($ogimg) ?>"><?php endif; ?>
-<meta name="twitter:card" content="<?= $ogimg ? 'summary_large_image' : 'summary' ?>"><meta name="twitter:title" content="<?= e($ogTitle) ?>"><meta name="twitter:description" content="<?= e($d) ?>">
+<meta name="robots" content="<?= !empty($meta['noindex']) ? 'noindex,follow' : 'index,follow,max-image-preview:large' ?>">
+<meta property="og:site_name" content="<?= e($name) ?>"><meta property="og:locale" content="en_US"><meta property="og:type" content="<?= e($meta['type'] ?? 'website') ?>"><meta property="og:title" content="<?= e($ogTitle) ?>">
+<meta property="og:description" content="<?= e($d) ?>"><meta property="og:url" content="<?= e($canon) ?>">
+<?php if ($ogimg): ?><meta property="og:image" content="<?= e($ogimg) ?>"><?php if (str_starts_with($ogimg, 'https://')): ?><meta property="og:image:secure_url" content="<?= e($ogimg) ?>"><?php endif; ?>
+<?php if (!empty($si['w'])): ?><meta property="og:image:width" content="<?= (int)$si['w'] ?>"><meta property="og:image:height" content="<?= (int)$si['h'] ?>"><?php endif; ?><meta property="og:image:alt" content="<?= e($ogTitle) ?>">
+<?php endif; foreach (($meta['og'] ?? []) as $prop => $val): if ($val !== '' && $val !== null): ?><meta property="<?= e($prop) ?>" content="<?= e($val) ?>">
+<?php endif; endforeach; ?><meta name="twitter:card" content="<?= $ogimg ? 'summary_large_image' : 'summary' ?>"><meta name="twitter:title" content="<?= e($ogTitle) ?>"><meta name="twitter:description" content="<?= e($d) ?>">
+<?php if ($ogimg): ?><meta name="twitter:image" content="<?= e($ogimg) ?>"><meta name="twitter:image:alt" content="<?= e($ogTitle) ?>"><?php endif; ?><?php if ($tw): ?><meta name="twitter:site" content="<?= e($tw) ?>"><?php endif; ?>
 <?php if (!empty($meta['jsonld'])): ?><script type="application/ld+json"><?= json_encode(['@context' => 'https://schema.org'] + $meta['jsonld'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?></script><?php endif; ?>
 <link rel="stylesheet" href="<?= asset('/assets/site.css') ?>"></head><body>
 <?php if ($phones || $addr || $email): ?><div class="strip"><div class="wrap">
