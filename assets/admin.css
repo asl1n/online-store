@@ -142,15 +142,6 @@ small {
   gap: 14px;
   padding: 0 28px;
 }
-.crumbs {
-  color: var(--muted);
-}
-.crumbs span {
-  margin: 0 4px;
-}
-.crumbs b {
-  color: var(--ink);
-}
 .top-right {
   margin-left: auto;
   display: flex;
@@ -257,17 +248,6 @@ small {
   padding: 28px;
   width: 100%;
 }
-.pagehead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-bottom: 20px;
-}
-.pagehead h1 {
-  font-size: 24px;
-}
 .actions {
   display: flex;
   gap: 8px;
@@ -331,7 +311,7 @@ small {
   font: inherit;
   padding: 0;
 }
-/* cards, toolbar */
+/* cards */
 .card {
   background: var(--card);
   border-radius: var(--r);
@@ -343,23 +323,6 @@ small {
 }
 .card.pad {
   padding: 22px;
-}
-.toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-bottom: 14px;
-}
-.toolbar form {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.toolbar input,
-.toolbar select {
-  min-width: 220px;
 }
 .count {
   color: var(--muted);
@@ -735,12 +698,7 @@ body.login {
   }
   .hide-xs,
   .who,
-  .caret,
-  .crumbs span,
-  .crumbs b {
-    display: none;
-  }
-  .crumbs {
+  .caret {
     display: none;
   }
   .user-btn {
@@ -748,14 +706,6 @@ body.login {
   }
   .formcard {
     padding: 18px;
-  }
-  .toolbar input,
-  .toolbar select {
-    min-width: 0;
-    flex: 1;
-  }
-  .toolbar form {
-    width: 100%;
   }
   .profile {
     flex-direction: column;
@@ -1216,28 +1166,6 @@ label.switch {
   .msg-actions .push {
     margin-left: 0;
   }
-  .pagehead {
-    gap: 10px;
-  }
-  .pagehead h1 {
-    font-size: 21px;
-  }
-}
-
-/* round 12 */
-.toolbar {
-  margin-bottom: 20px;
-}
-.toolbar form select {
-  min-width: 200px;
-}
-@media (max-width: 760px) {
-  .toolbar {
-    margin-bottom: 16px;
-  }
-  .toolbar form select {
-    width: 100%;
-  }
 }
 
 /* gallery field */
@@ -1306,4 +1234,126 @@ label.switch {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* ---- round 13: compact page header ----
+   Desktop: page title in the top bar; ONE row below = search/filters (left) + Create (right); total lives in the table footer.
+   Phones (<=760px): no room in the top bar, so the title drops into the page row, search sits under it. */
+.top-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.content {
+  padding-top: 24px;
+}
+.pagebar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "tools actions";
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.pagebar .pagetitle {
+  display: none;
+  grid-area: title;
+  margin: 0;
+  font-size: 21px;
+  line-height: 1.2;
+  min-width: 0;
+}
+.pagebar-tools {
+  grid-area: tools;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.pagebar .actions {
+  grid-area: actions;
+  justify-self: end;
+  flex-wrap: nowrap;
+}
+.pagebar-tools form {
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+.pagebar-tools select {
+  min-width: 200px;
+}
+.pagebar.is-bare {
+  display: none;
+}
+
+/* list card footer: total on the left, pager on the right */
+.tablefoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+}
+.tablefoot .pager {
+  margin: 0;
+  align-items: center;
+}
+.tablefoot .pager a {
+  min-width: 32px;
+  padding: 5px 9px;
+  text-align: center;
+  font-size: 13px;
+}
+.pager .gap {
+  color: var(--muted);
+  padding: 0 2px;
+}
+.card:has(> .tablewrap) {
+  overflow: hidden;
+}
+
+@media (max-width: 1000px) {
+  .pagebar {
+    margin-bottom: 16px;
+  }
+}
+@media (max-width: 760px) {
+  .top-title {
+    display: none;
+  }
+  .content {
+    padding-top: 16px;
+  }
+  .pagebar {
+    grid-template-areas: "title actions" "tools tools";
+    row-gap: 12px;
+    margin-bottom: 14px;
+  }
+  .pagebar.no-tools {
+    grid-template-areas: "title actions";
+  }
+  .pagebar.is-bare {
+    display: grid;
+  }
+  .pagebar .pagetitle {
+    display: block;
+  }
+  .pagebar-tools form,
+  .searchbox {
+    width: 100%;
+  }
+  .pagebar-tools select {
+    width: 100%;
+    min-width: 0;
+  }
 }

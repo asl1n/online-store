@@ -1,9 +1,9 @@
 <?php
 require __DIR__ . '/../includes/admin_layout.php';
 $me = require_admin();
-admin_header('Dashboard', 'index', '<a class="btn" href="' . BASE_URL . '/admin/products?action=new">' . ui_icon_plus() . 'Add Product</a>');
+admin_header('Dashboard', 'index', ui_create_btn(BASE_URL . '/admin/products?action=new', 'Product', 'Create product'), '<span class="count">Welcome back, <b>' . e($me['name']) . '</b>.</span>');
 $stats = [['Products', 'products', 'products.php'], ['Brands', 'brands', 'brands.php'], ['Categories', 'categories', 'categories.php'], ['Blogs', 'blogs', 'blogs.php'], ['Banners', 'banners', 'banners.php']];
-echo '<p class="count" style="margin-top:-8px">Welcome back, <b>' . e($me['name']) . '</b>.</p><div class="stats">';
+echo '<div class="stats">';
 foreach ($stats as [$l, $t, $href]) echo '<a class="card stat" href="' . BASE_URL . '/admin/' . basename($href, '.php') . '"><b>' . (int)fetch_val("SELECT COUNT(*) FROM `$t`") . '</b><span>' . e($l) . '</span></a>';
 echo '<a class="card stat" href="' . BASE_URL . '/admin/messages"><b>' . (int)fetch_val('SELECT COUNT(*) FROM contact_messages WHERE is_read=0') . '</b><span>Unread messages</span></a></div>';
 $logs = fetch_all('SELECT * FROM activity_logs ORDER BY id DESC LIMIT 8'); ?>

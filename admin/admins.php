@@ -55,7 +55,7 @@ if ($act === 'reset') {
     <?php admin_footer(); exit;
 }
 $rows = fetch_all('SELECT a.*, c.name AS creator FROM admins a LEFT JOIN admins c ON c.id=a.created_by ORDER BY a.id');
-admin_header('Admins', 'admins', '<a class="btn" href="' . e($self) . '?action=new">' . ui_icon_plus() . 'Add Admin</a>'); ?>
+admin_header('Admins', 'admins', ui_create_btn($self . '?action=new', 'Admin')); ?>
 <div class="card tablewrap"><table class="table"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Last login</th><th>Created by</th><th></th></tr></thead><tbody>
 <?php foreach ($rows as $r): $self_row = (int)$r['id'] === (int)$me['id']; ?><tr><td><b><?= e($r['name']) ?></b><?= $self_row ? ' <span class="pill">You</span>' : '' ?></td><td><?= e($r['email']) ?></td>
 <td><span class="pill"><?= $r['role'] === 'super_admin' ? 'Super admin' : 'Admin' ?></span></td><td><span class="pill <?= $r['is_active'] ? 'on' : 'off' ?>"><?= $r['is_active'] ? 'Active' : 'Disabled' ?></span></td>

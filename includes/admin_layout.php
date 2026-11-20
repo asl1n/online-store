@@ -12,6 +12,17 @@ function go(string $url): never { header('Location: ' . $url); exit; }
 // ---------- shared UI components ----------
 function ui_icon_plus(): string { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>'; }
 function ui_icon_back(): string { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>'; }
+/** The one "Create" button used on every list page. Visible text stays short; screen readers still hear what it creates. */
+function ui_create_btn(string $href, string $entity, string $label = 'Create'): string {
+    $a = 'Create ' . strtolower($entity);
+    return '<a class="btn" href="' . e($href) . '" aria-label="' . e($a) . '" title="' . e($a) . '">' . ui_icon_plus() . e($label) . '</a>';
+}
+/** Live search box (see data-live-search in admin.js). $clear = URL that resets the search. */
+function ui_search(string $what, string $value, string $clear): string {
+    return '<form method="get" class="searchbox" data-live-search role="search"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>'
+        . '<input type="text" name="s" placeholder="Search ' . e(strtolower($what)) . '…" aria-label="Search ' . e(strtolower($what)) . '" value="' . e($value) . '" autocomplete="off">'
+        . ($value !== '' ? '<a class="clear" href="' . e($clear) . '" aria-label="Clear search">&times;</a>' : '') . '</form>';
+}
 /** $o keys: error, help, half, req, for */
 function ui_field(string $label, string $control, array $o = []): string {
     $cls = 'field' . (empty($o['half']) ? ' span2' : '') . (!empty($o['error']) ? ' has-error' : '');
@@ -35,7 +46,12 @@ function ui_errors_summary(array $errors): string {
     return $n ? ui_alert('err', "Please fix the $n error" . ($n > 1 ? 's' : '') . ' highlighted below.') : '';
 }
 
-function admin_header(string $title, string $active = '', string $actions = ''): void {
+/**
+ * $actions = buttons on the right of the page row (e.g. Create). $tools = left side of the same row (search, filters).
+ * Desktop: the page title lives in the top bar and the page row is just tools + actions.
+ * Phones: the top bar has no room, so the title comes down into the page row (title + actions, tools underneath).
+ */
+function admin_header(string $title, string $active = '', string $actions = '', string $tools = ''): void {
     $a = require_admin();
     $unread = (int) fetch_val('SELECT COUNT(*) FROM contact_messages WHERE is_read=0');
     $groups = [
@@ -61,7 +77,7 @@ function admin_header(string $title, string $active = '', string $actions = ''):
 <div class="main">
 <header class="topbar">
   <button class="icon-btn menu" type="button" data-side-toggle aria-label="Open menu">&#9776;</button>
-  <div class="crumbs">Admin <span>/</span> <b><?= e($title) ?></b></div>
+  <h1 class="top-title"><?= e($title) ?></h1>
   <div class="top-right">
     <a class="icon-link<?= $unread ? ' has-new' : '' ?>" href="<?= BASE_URL ?>/admin/messages" aria-label="<?= $unread ? (int)$unread . ' unread messages' : 'Messages' ?>" title="<?= $unread ? (int)$unread . ' unread' : 'Messages' ?>"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg><?php if ($unread): ?><span class="dot<?= $unread > 99 ? ' wide' : ($unread > 9 ? ' two' : '') ?>" aria-hidden="true"><?= badge_count($unread) ?></span><?php endif; ?></a>
     <a class="btn ghost sm hide-xs" href="<?= BASE_URL ?>/" target="_blank" rel="noopener">View site &#8599;</a>
@@ -79,7 +95,9 @@ function admin_header(string $title, string $active = '', string $actions = ''):
   </div>
 </header>
 <main class="content">
-<div class="pagehead"><h1><?= e($title) ?></h1><div class="actions"><?= $actions ?></div></div>
+<div class="pagebar<?= $tools === '' ? ' no-tools' : '' ?><?= ($tools === '' && $actions === '') ? ' is-bare' : '' ?>"><h1 class="pagetitle"><?= e($title) ?></h1>
+<?php if ($tools !== ''): ?><div class="pagebar-tools"><?= $tools ?></div><?php endif; ?>
+<?php if ($actions !== ''): ?><div class="actions"><?= $actions ?></div><?php endif; ?></div>
 <?php foreach (flashes() as [$t, $m]): ?><?= ui_alert($t === 'ok' ? 'ok' : 'err', $m) ?><?php endforeach;
 }
 
@@ -94,11 +112,34 @@ function admin_footer(): void { ?>
 <script src="<?= asset('/assets/admin.js') ?>"></script></body></html>
 <?php }
 
+/** Compact pager: 1 … 4 5 6 … 20. Never grows wider than 7 numbers, however many pages there are. */
 function pager(int $page, int $pages): string {
     if ($pages <= 1) return '';
-    $qs = $_GET; $out = '<div class="pager">';
-    if ($page > 1) { $qs['page'] = $page - 1; $out .= '<a href="?' . e(http_build_query($qs)) . '">&laquo;</a>'; }
-    for ($i = 1; $i <= $pages; $i++) { $qs['page'] = $i; $out .= '<a class="' . ($i === $page ? 'on' : '') . '" href="?' . e(http_build_query($qs)) . '">' . $i . '</a>'; }
-    if ($page < $pages) { $qs['page'] = $page + 1; $out .= '<a href="?' . e(http_build_query($qs)) . '">&raquo;</a>'; }
-    return $out . '</div>';
+    $qs = $_GET;
+    $href = function (int $p) use ($qs): string { $qs['page'] = $p; return '?' . e(http_build_query($qs)); };
+    $nums = $pages <= 7 ? range(1, $pages) : array_values(array_unique(array_filter([1, $page - 1, $page, $page + 1, $pages], fn($n) => $n >= 1 && $n <= $pages)));
+    sort($nums);
+    $out = '<nav class="pager" aria-label="Pagination">';
+    if ($page > 1) $out .= '<a href="' . $href($page - 1) . '" aria-label="Previous page">&laquo;</a>';
+    $prev = 0;
+    foreach ($nums as $n) {
+        if ($n - $prev > 1) $out .= '<span class="gap" aria-hidden="true">…</span>';
+        $out .= '<a' . ($n === $page ? ' class="on" aria-current="page"' : '') . ' href="' . $href($n) . '">' . $n . '</a>';
+        $prev = $n;
+    }
+    if ($page < $pages) $out .= '<a href="' . $href($page + 1) . '" aria-label="Next page">&raquo;</a>';
+    return $out . '</nav>';
+}
+
+/**
+ * Footer of a list card: the total on the left, pager on the right. Keeps the count out of the top of the page.
+ * $noun = [singular, plural]. $q = active search text (shown so it is clear the total is filtered).
+ */
+function ui_tablefoot(int $page, int $per, int $total, int $pages, array $noun = ['item', 'items'], string $q = ''): string {
+    if ($total < 1) return '';
+    $txt = $pages > 1
+        ? 'Showing ' . (($page - 1) * $per + 1) . '–' . min($total, $page * $per) . ' of ' . $total . ' ' . $noun[1]
+        : $total . ' ' . ($total === 1 ? $noun[0] : $noun[1]);
+    if ($q !== '') $txt .= ' matching “' . e($q) . '”';
+    return '<div class="tablefoot"><span class="count">' . $txt . '</span>' . pager($page, $pages) . '</div>';
 }

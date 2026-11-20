@@ -41,10 +41,9 @@ $per = 20; $page = max(1, (int)($_GET['page'] ?? 1));
 $total = (int)fetch_val('SELECT COUNT(*) FROM contact_messages'); $pages = max(1, (int)ceil($total / $per)); $page = min($page, $pages);
 $rows = fetch_all('SELECT * FROM contact_messages ORDER BY id DESC LIMIT ' . (int)$per . ' OFFSET ' . (int)(($page - 1) * $per));
 admin_header('Contact Messages', 'messages'); ?>
-<div class="toolbar"><span class="count"><?= $total ?> message<?= $total === 1 ? '' : 's' ?></span></div>
-<div class="card tablewrap"><table class="table"><thead><tr><th>Status</th><th>Name</th><th>Email</th><th>Subject / message</th><th>Received</th><th></th></tr></thead><tbody>
+<div class="card"><div class="tablewrap"><table class="table"><thead><tr><th>Status</th><th>Name</th><th>Email</th><th>Subject / message</th><th>Received</th><th></th></tr></thead><tbody>
 <?php foreach ($rows as $r): ?><tr class="<?= $r['is_read'] ? '' : 'unread' ?>"><td><span class="pill <?= $r['is_read'] ? '' : 'on' ?>"><?= $r['is_read'] ? 'Read' : 'New' ?></span></td><td><?= e($r['name']) ?></td><td><?= e($r['email']) ?></td>
 <td><?= e(mb_strimwidth((string)($r['subject'] ?: $r['message']), 0, 60, '…')) ?></td><td><?= e(substr((string)$r['created_at'], 0, 16)) ?></td>
 <td class="act"><a class="btn sm ghost" href="?id=<?= (int)$r['id'] ?>">View</a></td></tr><?php endforeach;
-if (!$rows) echo '<tr><td colspan="6" class="empty">No messages yet. Messages from the website contact form appear here.</td></tr>'; ?></tbody></table></div><?= pager($page, $pages) ?>
+if (!$rows) echo '<tr><td colspan="6" class="empty">No messages yet. Messages from the website contact form appear here.</td></tr>'; ?></tbody></table></div><?= ui_tablefoot($page, $per, $total, $pages, ['message', 'messages']) ?></div>
 <?php admin_footer();

@@ -160,7 +160,7 @@ function crud_run(array $c): void {
         $posted = $_POST; $act = $id ? 'edit' : 'new';
     }
 
-    $addBtn = '<a class="btn" href="' . e($self) . '?action=new">' . ui_icon_plus() . 'Add ' . e($c['entity']) . '</a>';
+    $addBtn = ui_create_btn($self . '?action=new', $c['entity']);
 
     // ---------- FORM ----------
     if ($act === 'new' || $act === 'edit') {
@@ -223,10 +223,8 @@ function crud_run(array $c): void {
     $pages = max(1, (int)ceil($total / $per)); $page = min($page, $pages);
     $rows = fetch_all('SELECT t.*, ca.name AS created_name, ua.name AS updated_name ' . ($c['extra_select'] ?? '') . " $from $where ORDER BY " . ($c['order'] ?? 't.id DESC')
         . ' LIMIT ' . (int)$per . ' OFFSET ' . (int)(($page - 1) * $per), $params);
-    admin_header($c['title'], $c['active'], $addBtn); ?>
-    <div class="toolbar"><span class="count"><?= (int)$total ?> <?= $total === 1 ? 'item' : 'items' ?><?= $s !== '' ? ' matching “' . e($s) . '”' : '' ?></span>
-      <?php if (!empty($c['search'])): ?><form method="get" class="searchbox" data-live-search role="search"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input type="text" name="s" placeholder="Search <?= e(strtolower($c['title'])) ?>…" value="<?= e($s) ?>" autocomplete="off"><?php if ($s !== ''): ?><a class="clear" href="<?= e($self) ?>" aria-label="Clear search">&times;</a><?php endif; ?></form><?php endif; ?></div>
-    <div class="card tablewrap"><table class="table"><thead><tr>
+    admin_header($c['title'], $c['active'], $addBtn, !empty($c['search']) ? ui_search($c['title'], $s, $self) : ''); ?>
+    <div class="card"><div class="tablewrap"><table class="table"><thead><tr>
       <?php foreach ($c['columns'] as $col): ?><th><?= e($col['label']) ?></th><?php endforeach; ?><th>Added / edited</th><th></th></tr></thead><tbody>
     <?php foreach ($rows as $r): ?><tr>
       <?php foreach ($c['columns'] as $col): $v = $r[$col['name']] ?? ''; $t = $col['type'] ?? ''; ?><td>
@@ -239,7 +237,7 @@ function crud_run(array $c): void {
         <small>Edited by <b><?= e($r['updated_name'] ?? 'unknown') ?></b> · <?= e(substr((string)$r['updated_at'], 0, 10)) ?></small></td>
       <td class="act"><a class="btn sm ghost" href="<?= e($self) ?>?action=edit&amp;id=<?= (int)$r['id'] ?>">Edit</a>
         <form method="post" data-confirm-title="Delete <?= e(strtolower($c['entity'])) ?>?" data-confirm="Delete “<?= e((string)($r[$c['title_field']] ?? '')) ?>”? <?= e($c['delete_note'] ?? 'This cannot be undone.') ?>"><?= csrf_field() ?><input type="hidden" name="_do" value="delete"><input type="hidden" name="id" value="<?= (int)$r['id'] ?>"><button class="btn sm danger-ghost">Delete</button></form></td>
-    </tr><?php endforeach; if (!$rows): ?><tr><td colspan="<?= count($c['columns']) + 2 ?>" class="empty"><?= $s !== '' ? 'No results for your search.' : 'Nothing here yet. Click “Add ' . e($c['entity']) . '” to create the first one.' ?></td></tr><?php endif; ?>
-    </tbody></table></div><?= pager($page, $pages) ?>
+    </tr><?php endforeach; if (!$rows): ?><tr><td colspan="<?= count($c['columns']) + 2 ?>" class="empty"><?= $s !== '' ? 'No results for your search.' : 'Nothing here yet. Click “Create” to add the first one.' ?></td></tr><?php endif; ?>
+    </tbody></table></div><?= ui_tablefoot($page, $per, $total, $pages, ['item', 'items'], $s) ?></div>
     <?php admin_footer();
 }
