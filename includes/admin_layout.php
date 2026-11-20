@@ -50,10 +50,10 @@ function admin_header(string $title, string $active = '', string $actions = ''):
 <meta name="robots" content="noindex,nofollow"><?php if (!empty($GLOBALS['need_editor'])): ?><link rel="stylesheet" href="<?= asset('/assets/vendor/ckeditor5/ckeditor5.css') ?>"><?php endif; ?><link rel="stylesheet" href="<?= asset('/assets/admin.css') ?>"></head><body class="admin">
 <div class="shell">
 <aside class="side" id="side">
-  <a class="brand" href="<?= BASE_URL ?>/admin/index.php"><?= e(mb_strtoupper(site_name())) ?><small>ADMIN PANEL</small></a>
+  <a class="brand" href="<?= BASE_URL ?>/admin/"><?= e(mb_strtoupper(site_name())) ?><small>ADMIN PANEL</small></a>
   <nav>
   <?php foreach ($groups as $g => $items): ?><div class="navgroup"><?= e($g) ?></div>
-    <?php foreach ($items as $it): ?><a href="<?= BASE_URL ?>/admin/<?= $it[2] ?>" class="<?= $it[0] === $active ? 'on' : '' ?>"><?= e($it[1]) ?><?php if (!empty($it[3])): ?><span class="badge" aria-label="<?= (int)$it[3] ?> unread"><?= badge_count((int)$it[3]) ?></span><?php endif; ?></a><?php endforeach; ?>
+    <?php foreach ($items as $it): ?><a href="<?= BASE_URL ?>/admin/<?= $it[2] === 'index.php' ? '' : e(basename($it[2], '.php')) ?>" class="<?= $it[0] === $active ? 'on' : '' ?>"><?= e($it[1]) ?><?php if (!empty($it[3])): ?><span class="badge" aria-label="<?= (int)$it[3] ?> unread"><?= badge_count((int)$it[3]) ?></span><?php endif; ?></a><?php endforeach; ?>
   <?php endforeach; ?>
   </nav>
 </aside>
@@ -63,8 +63,8 @@ function admin_header(string $title, string $active = '', string $actions = ''):
   <button class="icon-btn menu" type="button" data-side-toggle aria-label="Open menu">&#9776;</button>
   <div class="crumbs">Admin <span>/</span> <b><?= e($title) ?></b></div>
   <div class="top-right">
-    <a class="icon-link<?= $unread ? ' has-new' : '' ?>" href="<?= BASE_URL ?>/admin/messages.php" aria-label="<?= $unread ? (int)$unread . ' unread messages' : 'Messages' ?>" title="<?= $unread ? (int)$unread . ' unread' : 'Messages' ?>"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg><?php if ($unread): ?><span class="dot<?= $unread > 99 ? ' wide' : ($unread > 9 ? ' two' : '') ?>" aria-hidden="true"><?= badge_count($unread) ?></span><?php endif; ?></a>
-    <a class="btn ghost sm hide-xs" href="<?= BASE_URL ?>/index.php" target="_blank" rel="noopener">View site &#8599;</a>
+    <a class="icon-link<?= $unread ? ' has-new' : '' ?>" href="<?= BASE_URL ?>/admin/messages" aria-label="<?= $unread ? (int)$unread . ' unread messages' : 'Messages' ?>" title="<?= $unread ? (int)$unread . ' unread' : 'Messages' ?>"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg><?php if ($unread): ?><span class="dot<?= $unread > 99 ? ' wide' : ($unread > 9 ? ' two' : '') ?>" aria-hidden="true"><?= badge_count($unread) ?></span><?php endif; ?></a>
+    <a class="btn ghost sm hide-xs" href="<?= BASE_URL ?>/" target="_blank" rel="noopener">View site &#8599;</a>
     <div class="user" data-dropdown>
       <button class="user-btn" type="button" aria-haspopup="true" aria-expanded="false">
         <span class="avatar"><?= e(initials($a['name'])) ?></span>
@@ -72,7 +72,7 @@ function admin_header(string $title, string $active = '', string $actions = ''):
       </button>
       <div class="dropmenu" role="menu">
         <div class="dm-head"><b><?= e($a['name']) ?></b><small><?= e($a['email']) ?></small></div>
-        <a href="<?= BASE_URL ?>/admin/account.php" role="menuitem">View profile</a>
+        <a href="<?= BASE_URL ?>/admin/account" role="menuitem">View profile</a>
         <button type="button" class="dm-logout" data-open-logout role="menuitem">Logout</button>
       </div>
     </div>
@@ -85,7 +85,7 @@ function admin_header(string $title, string $active = '', string $actions = ''):
 
 function admin_footer(): void { ?>
 </main></div></div>
-<dialog id="logoutDlg" class="dlg"><form method="post" action="<?= BASE_URL ?>/admin/logout.php"><?= csrf_field() ?>
+<dialog id="logoutDlg" class="dlg"><form method="post" action="<?= BASE_URL ?>/admin/logout"><?= csrf_field() ?>
   <h3>Log out?</h3><p>You will need to sign in again to continue managing the site.</p>
   <div class="dlg-actions"><button type="button" class="btn ghost" data-dlg-close>Cancel</button><button class="btn danger">Yes, log out</button></div></form></dialog>
 <dialog id="confirmDlg" class="dlg"><h3 id="cTitle">Are you sure?</h3><p id="cMsg"></p>

@@ -2,7 +2,7 @@
 require __DIR__ . '/../includes/admin_layout.php';
 require_once __DIR__ . '/../includes/contact.php';
 $me = require_super();
-$self = BASE_URL . '/admin/settings.php';
+$self = BASE_URL . '/admin/settings';
 
 // key => [label, type, max, required, help, kind, half]
 $sections = [
@@ -106,5 +106,5 @@ admin_header('Site Settings', 'settings'); echo ui_errors_summary($errors); ?>
     else $ctl = ui_input($k, $vals[$k] ?? '', ['maxlength' => $max] + ($req ? ['required' => true] : []));
     echo ui_field($label, $ctl, $o);
 endforeach; ?></div><?php endforeach; ?>
-<div class="form-actions"><button class="btn">Save settings</button><a class="btn ghost" href="<?= BASE_URL ?>/admin/index.php">Cancel</a></div></form>
+<div class="form-actions"><button class="btn">Save settings</button><a class="btn ghost" href="<?= BASE_URL ?>/admin/">Cancel</a></div></form>
 <?php admin_footer();

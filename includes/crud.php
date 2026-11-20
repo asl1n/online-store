@@ -178,7 +178,7 @@ function crud_run(array $c): void {
             switch ($f['type']) {
                 case 'richtext':
                     $rv = (string)$vals[$n]; if ($rv !== '' && !looks_like_html($rv)) $rv = plain_to_html($rv);
-                    $ctl = ui_textarea($n, $rv, ['rows' => 12, 'data-editor' => true, 'data-upload' => BASE_URL . '/admin/editor-upload.php', 'data-csrf' => csrf_token()]); break;
+                    $ctl = ui_textarea($n, $rv, ['rows' => 12, 'data-editor' => true, 'data-upload' => BASE_URL . '/admin/editor-upload', 'data-csrf' => csrf_token()]); break;
                 case 'textarea': $ctl = ui_textarea($n, $vals[$n], ['rows' => $f['rows'] ?? 5, 'maxlength' => $f['max'] ?? 20000] + $req); break;
                 case 'select':
                     $ctl = '<select id="' . e($n) . '" name="' . e($n) . '"><option value="">— Select —</option>';

@@ -1,7 +1,7 @@
 <?php
 require __DIR__ . '/../includes/admin_layout.php';
 $me = require_super();
-$self = BASE_URL . '/admin/admins.php';
+$self = BASE_URL . '/admin/admins';
 $act = $_GET['action'] ?? 'list'; $rid = (int)($_GET['id'] ?? 0); $errors = []; $old = [];
 $clean = fn($s) => trim(preg_replace('/\s+/', ' ', strip_tags((string)$s)));
 

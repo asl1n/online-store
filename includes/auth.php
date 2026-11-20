@@ -16,7 +16,7 @@ function current_admin(): ?array {
 
 function require_admin(): array {
     $a = current_admin();
-    if (!$a) redirect('/admin/login.php');
+    if (!$a) redirect('/admin/login');
     return $a;
 }
 function require_super(): array {

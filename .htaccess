@@ -1,8 +1,12 @@
-Options -Indexes
+Options -Indexes -MultiViews
 <IfModule mod_rewrite.c>
 RewriteEngine On
 RewriteRule ^robots\.txt$ robots.php [L]
 RewriteRule ^sitemap\.xml$ sitemap.php [L]
+
+# Clean admin URLs: /admin/products -> admin/products.php (only when that file exists)
+RewriteCond %{REQUEST_FILENAME}.php -f
+RewriteRule ^admin/([A-Za-z0-9_-]+)/?$ admin/$1.php [L,QSA]
 
 # Clean URLs: /shop, /blogs, /contact, /product/slug, /blog/slug
 RewriteRule ^shop/?$ shop.php [L,QSA]

@@ -11,7 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($new !== '') { if ($e = validate_password($new)) $errors['new'] = $e; elseif ($new !== $new2) $errors['new2'] = 'The two new passwords do not match.'; }
     if ($cur === '') $errors['current'] = 'Enter your current password to save changes.';
     if (!$errors) {
-        try { update_own_credentials($name, $email, $cur, $new); flash('ok', 'Your profile was updated.'); go(BASE_URL . '/admin/account.php'); }
+        try { update_own_credentials($name, $email, $cur, $new); flash('ok', 'Your profile was updated.'); go(BASE_URL . '/admin/account'); }
         catch (InvalidArgumentException $ex) {
             $m = $ex->getMessage();
             if (stripos($m, 'current') !== false) $errors['current'] = $m; elseif (stripos($m, 'email') !== false) $errors['email'] = $m; else $errors['_form'] = $m;

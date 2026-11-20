@@ -1,6 +1,6 @@
 <?php
 require __DIR__ . '/../includes/admin_layout.php';
-if (current_admin()) redirect('/admin/index.php');
+if (current_admin()) redirect('/admin/');
 $error = null; $errors = []; $email = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_check();
@@ -8,7 +8,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($email === '') $errors['email'] = 'Please enter your email.';
     elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) $errors['email'] = 'That does not look like a valid email.';
     if ($pw === '') $errors['password'] = 'Please enter your password.';
-    if (!$errors) { $error = admin_login($email, $pw); if (!$error) redirect('/admin/index.php'); }
+    if (!$errors) { $error = admin_login($email, $pw); if (!$error) redirect('/admin/'); }
 }
 ?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Admin Login – <?= e(site_name()) ?></title><?= favicon_tag() ?><meta name="robots" content="noindex,nofollow"><link rel="stylesheet" href="<?= asset('/assets/admin.css') ?>"></head>

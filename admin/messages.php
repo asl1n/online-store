@@ -1,7 +1,7 @@
 <?php
 require __DIR__ . '/../includes/admin_layout.php';
 require_admin();
-$self = BASE_URL . '/admin/messages.php';
+$self = BASE_URL . '/admin/messages';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_check(); $id = (int)($_POST['id'] ?? 0); $do = $_POST['_do'] ?? '';
     if ($do === 'delete') { db_delete('contact_messages', $id); log_activity('delete', 'Message', $id); flash('ok', 'Message deleted.'); }
